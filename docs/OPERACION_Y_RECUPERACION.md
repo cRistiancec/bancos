@@ -11,12 +11,12 @@ Mantener una publicación mensual verificable y recuperar el último estado buen
 3. Revisar el período objetivo.
 4. Distinguir no-op de actualización real.
 5. Si hubo commit, comprobar `metadata.json` y los tres Parquet.
-6. Abrir Streamlit y verificar Inicio, Panorama, Balance, PyG y CAMEL.
+6. Abrir Streamlit y verificar Resumen Ejecutivo, Panorama Bancario, Balance General, Pérdidas y Ganancias e Indicadores CAMEL.
 
 Comandos útiles:
 
 ```bash
-gh run list --repo jp1309/bancos --workflow actualizar-datos.yml --limit 5
+gh run list --repo cRistiancec/bancos --workflow actualizar-datos.yml --limit 5
 git status --short --branch
 python scripts/validar_actualizacion.py
 ```

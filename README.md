@@ -1,94 +1,73 @@
-# Radar Bancario Ecuador
+# Sistema Financiero Privado
 
-[![Actualizar Datos Bancarios](https://github.com/jp1309/bancos/actions/workflows/actualizar-datos.yml/badge.svg)](https://github.com/jp1309/bancos/actions/workflows/actualizar-datos.yml)
+**Sistema Inteligente para el Monitoreo Integral del Sistema Bancario Privado del Ecuador**
 
-Dashboard público en Streamlit para explorar la evolución del sistema bancario privado ecuatoriano con datos oficiales de la Superintendencia de Bancos.
+Plataforma institucional de inteligencia de riesgos construida sobre datos
+públicos de la Superintendencia de Bancos del Ecuador.
 
-- **Aplicación:** [jp1309-bancos.streamlit.app](https://jp1309-bancos.streamlit.app/)
-- **Fuente:** [Boletines de Series por Entidad](https://www.superbancos.gob.ec/estadisticas/portalestudios/bancos-2/)
-- **Autor:** Juan Pablo Erráez T.
-- **Licencia del código:** [MIT](LICENSE)
+**Autor institucional:** Eco. Cristian Coronel Quezada, MBA
+**Área:** Coordinación Técnica de Riesgos y Estudios — COSEDE
+
+> Este proyecto es la evolución institucional de "Radar Bancario Ecuador"
+> (desarrollo original: Juan Pablo Erráez T., [jp1309/bancos](https://github.com/jp1309/bancos),
+> licencia MIT), refactorizado hacia una plataforma de monitoreo prudencial
+> en julio de 2026 e integrado luego con la automatización de actualización
+> mensual de datos desarrollada en paralelo en el repositorio original. Ver
+> `docs/AUDITORIA_COMPLETA.md` y `CHANGELOG.md` para el detalle completo del
+> proceso.
 
 ## Estado de los datos
 
-Última fotografía validada en este repositorio:
+La cifra vigente no se mantiene a mano en la interfaz: la aplicación lee
+`master_data/metadata.json` en cada carga. Antes de publicar, el pipeline
+exige que los tres Parquet lleguen al mismo mes y que todas las entidades
+estén presentes en ese corte — ver `master_data/metadata.json` y
+`docs/DICCIONARIO_DATOS.md` para el estado exacto vigente.
 
-| Dataset | Período | Filas | Bancos en el último mes |
-|---|---:|---:|---:|
-| Balance | ene. 2003-jun. 2026 | 8.152.043 | 23 |
-| Pérdidas y ganancias | ene. 2003-jun. 2026 | 755.584 | 23 |
-| CAMEL | ene. 2003-jun. 2026 | 230.102 | 23 |
-
-La cifra vigente no se mantiene a mano en la interfaz: la portada lee `master_data/metadata.json`. Antes de publicar, el pipeline exige que los tres Parquet lleguen al mismo mes y que las 23 entidades estén presentes en ese corte.
-
-## Qué permite analizar
-
-La aplicación tiene cuatro módulos:
-
-1. **Panorama:** activos, cartera, depósitos, patrimonio, participación y crecimiento anual.
-2. **Balance General:** series históricas, jerarquía contable, participación, heatmaps y rankings.
-3. **Pérdidas y Ganancias:** márgenes, resultados mensuales y acumulados móviles de 12 meses.
-4. **CAMEL:** solvencia, calidad de activos, gestión, rentabilidad y liquidez.
-
-Los rankings muestran todas las entidades disponibles. Los comparadores permiten seleccionar hasta 10 bancos simultáneamente para conservar legibilidad y rendimiento.
-
-## Arquitectura resumida
-
-```text
-Superintendencia de Bancos
-        │  23 ZIP por entidad
-        ▼
-descargar.py + fuente_bancos.py
-        │  valida ZIP, XLSX, hojas BAL/PYG/CAMEL y fecha interna
-        ▼
-procesar_balance.py ─┐
-procesar_pyg.py      ├─► master_data/*.parquet + metadata.json
-procesar_camel.py   ─┘
-        │
-        ▼
-validar_actualizacion.py
-        │  fecha, esquema, 23 bancos, meses, claves e historia
-        ▼
-GitHub main ─► Streamlit Community Cloud
-```
-
-El flujo completo y sus decisiones están en [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md).
-
-## Inicio rápido
-
-Requiere Python 3.11 recomendado.
+## Ejecutar la plataforma
 
 ```bash
-git clone https://github.com/jp1309/bancos.git
-cd bancos
-python -m venv .venv
+pip install -r requirements.txt
+streamlit run app.py
 ```
 
-Activación del entorno:
+Ver `QUICKSTART.md` para una guía paso a paso y `docs/ManualUsuario.md` para
+el manual funcional completo.
 
-```powershell
-# Windows PowerShell
-.\.venv\Scripts\Activate.ps1
-```
+## Qué incluye
 
-```bash
-# Linux/macOS
-source .venv/bin/activate
-```
+23 páginas agrupadas en 7 secciones — Resumen Ejecutivo, Panorama Bancario,
+Monitoreo Prudencial, Indicadores CAMEL, Alertas Tempranas, Alertas
+Predictivas, Calificación de Riesgo, Riesgo de
+Crédito/Liquidez/Solvencia/Concentración/Sistémico, Balance General,
+Pérdidas y Ganancias, Ranking de Bancos, Comparativos entre Bancos,
+Evolución Histórica, Stress Testing, Modelos Predictivos, Asistente de
+Riesgos, Calidad de Datos, Reportes y Configuración — todas construidas
+sobre datos reales del sistema. Ver `docs/ManualUsuario.md` para el detalle
+de cada una.
 
-Instalación y ejecución:
+**Principio de esta plataforma: cero cifras inventadas.** Donde un análisis
+solicitado (p. ej. LCR/NSFR, VaR, red de interconexión interbancaria,
+vintage de cartera) no tiene una fuente de datos real en el pipeline actual,
+la página lo declara explícitamente como "módulo en preparación" en vez de
+mostrar un número calculado sobre supuestos. La matriz completa de qué es
+real y qué no está en `docs/AUDITORIA_COMPLETA.md`.
 
-```bash
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m streamlit run Inicio.py
-```
+## Fuente de Datos
 
-Abrir `http://localhost:8501`. La guía paso a paso está en [QUICKSTART.md](QUICKSTART.md).
+- **Origen**: Superintendencia de Bancos del Ecuador — [Boletines de Series por Entidad](https://www.superbancos.gob.ec/estadisticas/portalestudios/bancos-2/) (Catálogo Único de Cuentas)
+- **Período**: desde enero 2003, con actualización mensual automática (ver más abajo)
+- **Formato**: Parquet (`master_data/balance.parquet`, `pyg.parquet`, `camel.parquet`) + `metadata.json` con el estado exacto de cada publicación
 
 ## Actualización de datos
 
-La vía recomendada es el workflow **Actualizar Datos Bancarios** en GitHub Actions. Se ejecuta los días 6, 8, 10, 12, 14, 16, 18 y 20 a las 13:00 UTC, equivalente a las 08:00 de Ecuador continental (UTC-5).
+La vía recomendada es el workflow **Actualizar Datos Bancarios** en GitHub
+Actions (heredado y adaptado de `jp1309/bancos`). Intenta la actualización
+los días 6, 8, 10, 12, 14, 16, 18 y 20 de cada mes a las 13:00 UTC (08:00
+Ecuador continental), y se detiene en cuanto los tres datasets llegan al mes
+objetivo con la puerta de calidad en verde. El detalle completo del ciclo
+(reintentos, códigos de salida, qué pasa si la fuente no publica a tiempo)
+está en `docs/AUTOMATIZACION.md`.
 
 Ejecución manual local:
 
@@ -97,69 +76,88 @@ python -m pip install -r requirements-scraping.txt
 python scripts/actualizar_datos.py
 ```
 
-Códigos de salida del orquestador:
-
-| Código | Significado | Acción |
+| Código de salida | Significado | Acción |
 |---:|---|---|
 | `0` | Actualización completa o publicación ya vigente | No requiere corrección |
-| `2` | La fuente oficial aún no avanzó | No-op; esperar el siguiente intento |
-| Otro | Fallo real de descarga, ETL o validación | Revisar logs; no publicar |
+| `2` | La fuente oficial aún no avanzó al mes objetivo | No-op; esperar el siguiente intento |
+| Otro | Fallo real de descarga, ETL o validación | Revisar logs; se conserva la última versión válida |
 
-No se debe forzar un commit cuando el proceso devuelve `2`. El detalle operativo está en [docs/AUTOMATIZACION.md](docs/AUTOMATIZACION.md).
+No se debe forzar un commit cuando el proceso devuelve `2`, ni publicar un
+subconjunto de los cinco artefactos (`balance.parquet`, `pyg.parquet`,
+`camel.parquet`, `metadata.json`, `update_status.json`) para un corte nuevo.
 
 ## Validación
 
 ```bash
-python -m unittest discover -s tests -v
+python -m pytest tests/ -v
 python scripts/validar_actualizacion.py
 ```
 
-La puerta de publicación comprueba:
+La puerta de publicación (`scripts/validar_actualizacion.py`) comprueba
+esquema, continuidad mensual, ausencia de duplicados, cobertura de
+entidades, coherencia con `metadata.json`, y que la nueva publicación no
+pierda meses ni bancos ya publicados respecto del estado anterior. Ver
+`docs/AUTOMATIZACION.md`.
 
-- existencia y lectura de los tres Parquet;
-- columnas obligatorias y claves sin duplicados;
-- continuidad mensual global;
-- fecha máxima igual al mes objetivo;
-- exactamente 23 bancos únicos en cada dataset y 23 en el último mes;
-- coherencia con `metadata.json`;
-- conservación de meses y bancos ya publicados cuando existe un estado anterior.
-
-## Estructura principal
+## Arquitectura
 
 ```text
-Inicio.py                       Portada multipágina
-dashboard_metadata.py          Resumen dinámico de metadata
-pages/                          Módulos Streamlit
-utils/                          Carga, calidad y gráficos compartidos
-config/indicator_mapping.py     Códigos, etiquetas y colores
-scripts/                        Descarga, ETL, validación y orquestación
-master_data/                    Parquet y metadata publicados
-tests/                          Pruebas unitarias
-docs/                           Documentación operativa y técnica
-.github/workflows/              Automatización mensual
+Superintendencia de Bancos
+        │  ZIP por entidad
+        ▼
+scripts/descargar.py + fuente_bancos.py       (valida ZIP, XLSX, hojas, fecha interna)
+        ▼
+scripts/procesar_{balance,pyg,camel}.py  ─►  master_data/*.parquet + metadata.json
+        ▼
+scripts/validar_actualizacion.py              (puerta de calidad)
+        ▼
+GitHub main ─► Streamlit Community Cloud
+        │
+        ▼
+app.py (st.navigation)
+  ├── pages/            23 vistas agrupadas en 7 secciones
+  ├── ui/                tema, header, sidebar, layout compartidos
+  ├── components/         widgets reutilizables (selectores, tarjetas, paneles)
+  ├── charts/              builders de Plotly
+  ├── analytics/            HHI/CR5/CR10, semáforo, alertas, score CAMEL, índice sistémico, stress testing, calificación de riesgo
+  ├── models/                 forecasting (+backtesting), detección de anomalías, clustering
+  ├── services/                carga/caché de datos (Parquet) + motor del Asistente de Riesgos
+  └── config/                   códigos contables, paleta, registro de navegación
 ```
 
-`app.py` está vacío y no es el punto de entrada. Streamlit debe ejecutar `Inicio.py`.
+Detalle completo en `docs/ARQUITECTURA.md`. Manual técnico (metodologías,
+umbrales, qué no está implementado y por qué) en `docs/ManualTecnico.md`.
 
 ## Documentación
 
-| Documento | Propósito |
+| Documento | Contenido |
 |---|---|
-| [Índice técnico](docs/README.md) | Mapa de documentos y fuentes de verdad |
-| [Automatización](docs/AUTOMATIZACION.md) | GitHub Actions, calendario, exit codes y monitoreo |
-| [Operación y recuperación](docs/OPERACION_Y_RECUPERACION.md) | Runbook, incidentes, rollback y recuperación |
-| [Diccionario de datos](docs/DICCIONARIO_DATOS.md) | Esquemas, claves, unidades y semántica |
-| [Arquitectura](docs/ARQUITECTURA.md) | Flujo fuente-ETL-Parquet-Streamlit |
-| [Contribución](CONTRIBUTING.md) | Estándares, pruebas y checklist de cambios |
+| `docs/AUDITORIA_COMPLETA.md` | Auditoría previa al refactor institucional: arquitectura anterior, deuda técnica, matriz de factibilidad de datos |
+| `docs/ARQUITECTURA.md` | Arquitectura técnica actual (pipeline de datos + aplicación) |
+| `docs/ManualUsuario.md` | Manual funcional por módulo |
+| `docs/ManualTecnico.md` | Metodologías, umbrales, fórmulas y qué no está implementado |
+| `docs/DESPLIEGUE.md` | Streamlit Cloud, servidor propio, Docker |
+| `docs/AUTOMATIZACION.md` | GitHub Actions, calendario, códigos de salida y monitoreo |
+| `docs/OPERACION_Y_RECUPERACION.md` | Runbook operativo, incidentes, rollback y recuperación |
+| `docs/DICCIONARIO_DATOS.md` | Esquemas, claves, unidades y semántica de los datos |
+| `QUICKSTART.md` | Guía de instalación y primeros pasos |
+| `CHANGELOG.md` | Historial de versiones |
+
+## Instalación y requisitos
+
+- Python 3.11+ (recomendado; probado también en 3.14)
+- `pip install -r requirements.txt` (Streamlit, Pandas, NumPy, Plotly, PyArrow, scikit-learn, statsmodels, reportlab)
+- `pip install -r requirements-dev.txt` para correr la suite de pruebas (`pytest tests/`)
+- `pip install -r requirements-scraping.txt` únicamente para ejecutar localmente la actualización de datos (Selenium + Chrome)
 
 ## Alcance y uso responsable
 
-- Los valores monetarios provienen de la fuente en miles de USD y la interfaz los convierte a millones cuando corresponde.
+- Los valores monetarios provienen de la fuente en miles de USD; la interfaz los convierte a millones cuando corresponde.
 - Los indicadores CAMEL se almacenan como proporciones y se muestran como porcentajes.
 - PyG contiene valores acumulados oficiales, valores mensuales desacumulados y sumas móviles de 12 meses.
 - El dashboard es una herramienta analítica; no sustituye estados financieros auditados ni pronunciamientos regulatorios.
-- Los datos oficiales conservan sus términos y atribución de origen; la licencia MIT cubre el software del repositorio.
+- Los datos oficiales conservan sus términos y atribución de origen.
 
-## Soporte
+## Licencia
 
-Para errores reproducibles, abrir un [issue](https://github.com/jp1309/bancos/issues) incluyendo módulo, fecha, banco, captura y pasos para reproducirlo. Para incidentes de actualización, adjuntar el enlace del run de GitHub Actions.
+Este proyecto utiliza datos públicos de la Superintendencia de Bancos del Ecuador.

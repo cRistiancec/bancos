@@ -1,12 +1,214 @@
 Nota: Este changelog incluye entradas historicas de modulos y archivos que ya no existen en el repo actual.
 
-# Changelog - Sistema de Inteligencia Financiera
+# Changelog - Sistema Financiero Privado
 
-Registro de cambios y mejoras del dashboard de Business Intelligence.
+Registro de cambios y mejoras de la plataforma.
+
+## [Sin publicar]
+
+### Integración con la línea de automatización de datos (upstream)
+
+Reconciliación entre dos líneas de desarrollo divergentes construidas sobre
+el mismo commit inicial: el refactor institucional "Sistema Financiero
+Privado" (Fases 1-3, ver `[7.0.0]` y anteriores) y la línea de datos/
+automatización desarrollada en paralelo en el repositorio original
+(`jp1309/bancos`, rama `main`).
+
+- **Automatización mensual adoptada del repositorio original**: workflow
+  `.github/workflows/actualizar-datos.yml` (reintentos días 6-20),
+  orquestador transaccional `scripts/actualizar_datos.py` (descarga,
+  valida, respalda, procesa, publica o revierte), puerta de calidad
+  `scripts/validar_actualizacion.py`, y `master_data/metadata.json` +
+  `update_status.json` como bitácora de cada publicación. Ver
+  `docs/AUTOMATIZACION.md`.
+- **`.gitignore` corregido**: la versión heredada del refactor institucional
+  tenía reglas `*.txt` y `*.json` sin acotar, lo que impedía que
+  `requirements.txt` y `requirements-dev.txt` quedaran versionados (nunca
+  se detectó porque `git status` simplemente no los mostraba). Se adopta el
+  `.gitignore` de la línea de automatización, que acota estas reglas
+  correctamente (`/*.json` con excepción explícita para
+  `master_data/*.json`) y se añade una excepción equivalente para
+  `assets/*.png` (el logo institucional tampoco se había commiteado nunca
+  por la regla `*.png` heredada de la limpieza de capturas de depuración).
+- **`requirements.txt` fusionado**: se adopta el set de versiones fijadas
+  del repositorio original (`streamlit==1.53.1`, `pandas==2.3.0`,
+  `numpy==2.3.1`, `pyarrow==23.0.0` — fijadas tras un incidente de
+  segmentation fault en Streamlit Cloud) y se agregan las dependencias
+  propias de los módulos de Fase 2/3 (`scikit-learn`, `statsmodels`,
+  `reportlab`).
+- **Datos actualizados**: ver sección de datos más abajo para el corte
+  vigente tras esta integración.
+- **Entry point**: se mantiene `app.py` (`st.navigation`, Fase 1) como
+  único punto de entrada; `Inicio.py` y las 4 páginas numeradas originales
+  se eliminan (superadas por la arquitectura de Fase 1).
+- **Bug de "Top 5" en Pérdidas y Ganancias**: se verificó que el
+  repositorio original tampoco lo corrigió en su propia línea de
+  desarrollo (mismo `sort_values(ascending=True)` seguido de `head(5)`
+  etiquetado "Top 5"). Se mantiene preservado y documentado tal como
+  decidió la auditoría de Fase 1 (`docs/AUDITORIA_COMPLETA.md` sección
+  5.1) — sigue pendiente de aprobación de negocio antes de corregir una
+  cifra que los usuarios ya vieron en producción.
+
+## [7.0.0] - 2026-07-27
+
+### Fase 3 — Forecasting Riguroso, Alertas Predictivas y Calificación de Riesgo
+
+3 capacidades nuevas, todas construidas sobre analítica ya existente (sin
+datos nuevos, sin fabricar cifras):
+
+- **Backtesting de Forecasting** (`models/forecasting.py::backtest_serie`):
+  reporta MAE/RMSE/MAPE reales comparando la proyección contra los últimos
+  6 meses ya conocidos, en vez de solo mostrar una banda de incertidumbre
+  aproximada. Integrado en **Modelos Predictivos → Forecasting**.
+- **Alertas Predictivas** (`analytics/predictive_alerts.py`,
+  `pages/alertas_predictivas.py`): proyecta los indicadores del sistema (y,
+  bajo demanda, de cada banco) hacia adelante y avisa cuáles cruzarían el
+  umbral de alerta/crítico antes de que ocurra. El detalle por banco (144
+  combinaciones, ~15-20s) se calcula solo bajo demanda vía botón — nunca en
+  la carga automática de la página.
+- **Calificación de Riesgo Consolidada** (`analytics/risk_rating.py`,
+  `pages/calificacion_riesgo.py`): rating A-E por banco (70% score CAMEL +
+  30% resiliencia bajo el escenario "Adverso" de stress testing).
+  Deliberadamente NO incluye la contribución al Índice Sistémico — se
+  documenta por qué en `docs/ManualTecnico.md` (mezclar tamaño del banco
+  con su salud individual sería engañoso).
+- Se verificó empíricamente, antes de implementar, qué escenario de stress
+  testing sirve como discriminador de resiliencia: "Severo" y "Crisis
+  Sistémica" saturan (21/24 y 24/24 bancos en CRÍTICO respectivamente) y no
+  diferencian bancos entre sí; "Adverso" sí (3 OK / 11 ALERTA / 10 CRÍTICO).
+- 9 tests nuevos en `tests/test_phase3.py` (37 tests totales en el
+  proyecto).
+
+## [6.1.0] - 2026-07-27
+
+### Pulido y deuda técnica
+
+Pase de optimización sobre lo construido en Fase 1 y 2 (sin datos ni
+módulos nuevos). Verificado con `pytest` (28 tests nuevos en `tests/`) y
+`streamlit.testing.v1.AppTest` sobre las 21 páginas + `app.py`.
+
+- **Bug de nombres de banco corregido**: `config/indicator_mapping.py`
+  tenía 3 nombres de banco desalineados con los datos reales
+  (`Atlantida`→`Atlantida (antes DMiro)`, `Comercial Manabi`→`Comercial
+  Manabí`, `Ruminahui`→`Rumiñahui`). Esto hacía que esos 3 bancos
+  recibieran el color gris de respaldo en todas las visualizaciones, y que
+  la página Calidad de Datos los reportara falsamente como "sin datos". Se
+  confirmó que **los 24 bancos de `BANCOS_SISTEMA` tienen datos completos**
+  (incluido Amazonas, contra lo que decía la documentación heredada del
+  proyecto original). Ver `docs/AUDITORIA_COMPLETA.md` sección 7.3.
+- **Bug de rendimiento corregido**: la evolución de 36 meses del Índice
+  Sistémico (Fase 2) tardaba ~94s por re-filtrar `camel.parquet`/
+  `balance.parquet` completos en cada iteración; ahora usa pivotes
+  pre-calculados una sola vez — 1.6s, mismo resultado numérico verificado.
+- **Deprecaciones de Streamlit**: reemplazado `use_container_width=True`
+  por `width='stretch'` en 18 archivos (42 ocurrencias) antes de que
+  Streamlit elimine el parámetro.
+- **`FutureWarning` de pandas resueltos**: se agregó `observed=True` a los
+  `groupby`/`pivot_table` sobre la columna categórica `banco`, eliminando
+  filas fantasma (con `NaN`) que aparecían en algunos rankings de Balance
+  General para períodos donde no todos los bancos habían reportado.
+- **Caché agregada** a `utils/data_quality.py` (`@st.cache_data` en 7
+  funciones que no la tenían — hallazgo pendiente desde la auditoría de
+  Fase 1).
+- **Exportación a PDF** (`utils/pdf_export.py`, `reportlab`): reporte
+  ejecutivo institucional (KPIs + alertas) y exportación de cualquier tabla
+  filtrada, ambos agregados a `pages/reportes.py`.
+- **Suite de pruebas automatizadas** (`tests/`, `pytest`): 28 tests sobre
+  `analytics/`, `models/` y `services/`, corriendo contra los datos reales
+  de `master_data/` (sin mocks).
+- **Preparación para despliegue**: `Dockerfile`, `.dockerignore`,
+  `.streamlit/secrets.toml.example`, `docs/DESPLIEGUE.md`,
+  `requirements-dev.txt`.
+
+## [6.0.0] - 2026-07-27
+
+### Fase 2 — Analítica Avanzada
+
+Se agregan 4 páginas nuevas, siguiendo el mismo principio de la Fase 1
+(cero cifras inventadas): donde no hay datos reales, no se implementa.
+Ver `docs/AUDITORIA_COMPLETA.md` sección 6/7 y `docs/ManualTecnico.md`
+para el detalle metodológico completo de cada uno.
+
+- **Logo institucional**: se incorpora `assets/logo_cosede.png` (provisto
+  por el usuario); el header ya no usa el wordmark de texto de respaldo.
+- **Riesgo Sistémico** (`pages/riesgo_sistemico.py`): índice de contribución
+  sistémica propio (tamaño de mercado × estrés en morosidad/solvencia).
+  Reactiva y extiende `analytics/concentracion.py` de Fase 1. La red de
+  interconexión/contagio interbancario sigue fuera de alcance (sin datos de
+  contraparte).
+- **Stress Testing** (`pages/stress_testing.py`): escenarios hipotéticos
+  configurables (Adverso/Severo/Crisis Sistémica, con sliders editables)
+  aplicados a Morosidad/Solvencia/ROA reales, reclasificados con el mismo
+  semáforo de umbral de toda la plataforma. No es un VaR de mercado ni
+  estima impacto en dólares del Seguro de Depósitos.
+- **Modelos Predictivos** (`pages/modelos_predictivos.py`): forecasting
+  (Holt, `statsmodels`), detección de anomalías (Isolation Forest,
+  `scikit-learn`) y clustering de bancos (K-Means + PCA) sobre series
+  reales de indicadores CAMEL. Primer código funcional en `models/`
+  (antes solo un README de preparación de arquitectura).
+- **Asistente Inteligente de Riesgos** (`pages/asistente_riesgos.py`):
+  motor determinístico (`services/assistant_engine.py`) que responde
+  preguntas sobre banco/indicador/intención con cálculos reales — sin LLM
+  conectado. Interfaz `ProveedorAsistente` pluggable, con `ProveedorLLM`
+  como stub documentado para una integración futura.
+- **Dependencias**: se agregan `scikit-learn>=1.9` y `statsmodels>=0.14` a
+  `requirements.txt` (ya estaban disponibles en el entorno de desarrollo).
+
+## [5.0.0] - 2026-07-27
+
+### Refactorización institucional (Fase 1)
+
+Transformación integral de "Radar Bancario Ecuador" en **Sistema Financiero
+Privado** — plataforma institucional para COSEDE. Ver
+`docs/AUDITORIA_COMPLETA.md` para el detalle completo del análisis previo y
+`docs/ARQUITECTURA.md` / `docs/ManualTecnico.md` para la arquitectura
+resultante. No se alteró ningún cálculo ni resultado existente (con una
+excepción documentada y deliberadamente preservada: el bug de "Concentración
+Top 5" en Pérdidas y Ganancias, ver auditoría sección 5.1).
+
+**Rebranding**: nuevo nombre, subtítulo institucional y autoría (Eco.
+Cristian Coronel Quezada, MBA — Coordinación Técnica de Riesgos y Estudios,
+COSEDE).
+
+**Arquitectura**: nuevo entry point único `app.py` (`st.navigation`),
+reemplaza `Inicio.py` + `pages/N_*.py` numerados. Nuevas capas `ui/`,
+`components/`, `charts/`, `analytics/`, `services/` — ver `docs/ARQUITECTURA.md`.
+Tema oscuro institucional (`.streamlit/config.toml` + `styles/institutional.css`).
+
+**Deduplicación**: el selector jerárquico de cuentas (triplicado en Balance
+General) y el patrón Absoluto/Indexado/Participación (duplicado entre
+páginas) ahora son componentes compartidos (`components/account_selector.py`,
+`components/mode_selector.py`).
+
+**Código reactivado** (antes definido pero nunca conectado a la UI):
+`calcular_concentracion_hhi` (ahora en `analytics/concentracion.py`, con
+CR5/CR10 añadidos), `crear_radar_camel`, `crear_gauge`, `crear_heatmap`,
+`crear_linea_temporal`, `crear_scatter_posicionamiento`,
+`crear_barras_apiladas_100` (todas en `charts/builders.py`), y el módulo de
+Calidad de Datos (antes archivado, ahora en `pages/calidad_datos.py`, con el
+bug de la columna `hoja` inexistente corregido).
+
+### Pestañas nuevas (100% datos reales)
+Resumen Ejecutivo, Monitoreo Prudencial, Riesgo de Crédito, Riesgo de
+Liquidez, Riesgo de Solvencia, Riesgo de Concentración, Ranking de Bancos,
+Comparativos entre Bancos, Evolución Histórica, Alertas Tempranas, Reportes,
+Configuración.
+
+### Explícitamente fuera de alcance de esta fase
+LCR/NSFR, VaR/CVaR, red de interconexión interbancaria, vintage/roll-rate de
+cartera, Riesgo Operacional, Riesgo de Tasas, Stress Testing, Modelos
+Predictivos/ML, Asistente de IA, Mapas Interactivos — sin fuente de datos
+real en el pipeline actual. Ver matriz de factibilidad en
+`docs/AUDITORIA_COMPLETA.md` sección 6 y `models/README.md`.
+
+### Verificación
+17 páginas + `app.py` ejecutadas sin excepciones con
+`streamlit.testing.v1.AppTest`; valores numéricos y trazas de gráficos
+comparados contra las páginas originales (coinciden exactamente).
 
 ## [4.3.0] - 2026-07-18
 
-### Datos y automatización
+### Datos y automatización (repositorio original, `jp1309/bancos`)
 
 - Publicado y validado el corte de junio de 2026 para Balance, PyG y CAMEL.
 - La descarga valida 23 ZIP/XLSX, las tres hojas requeridas y la fecha interna uniforme.
@@ -14,18 +216,9 @@ Registro de cambios y mejoras del dashboard de Business Intelligence.
 - Los tres procesadores usan escritura atómica y el orquestador restaura los artefactos anteriores ante fallos.
 - Nueva puerta de publicación para esquema, fecha, continuidad mensual, cobertura, duplicados, metadata e historia.
 - Workflow con permisos explícitos de escritura y reintentos del 6 al 20 de cada mes.
-
-### Aplicación
-
 - Portada alimentada por `metadata.json`, sin cifras mensuales escritas a mano.
 - Cobertura visible y validada de 23 bancos hasta junio de 2026.
 - Reducción de memoria mediante categorías y `groupby(observed=True)`.
-
-### Documentación
-
-- Reescritos README, inicio rápido, contribución y ficha del proyecto.
-- Añadidos runbook de operación/recuperación, diccionario de datos y arquitectura.
-- Consolidado el índice de fuentes de verdad y separadas las notas históricas.
 
 ## [4.2.0] - 2026-01-28
 
@@ -310,7 +503,3 @@ y el proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - `Removido` - Funcionalidades eliminadas
 - `Corregido` - Corrección de bugs
 - `Seguridad` - Vulnerabilidades corregidas
-
----
-
-**Última actualización**: 26 de enero de 2026

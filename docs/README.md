@@ -1,6 +1,6 @@
 # Documentación técnica
 
-Este directorio contiene la documentación del Radar Bancario Ecuador. Los documentos de la primera tabla son las fuentes de verdad operativas; si una nota histórica contradice estos archivos o el código, prevalecen el código vigente y esta documentación autoritativa.
+Este directorio contiene la documentación del Sistema Financiero Privado (evolución institucional del Radar Bancario Ecuador). Los documentos de la primera tabla son las fuentes de verdad operativas; si una nota histórica contradice estos archivos o el código, prevalecen el código vigente y esta documentación autoritativa.
 
 ## Documentos autoritativos
 
@@ -9,8 +9,13 @@ Este directorio contiene la documentación del Radar Bancario Ecuador. Los docum
 | [AUTOMATIZACION.md](AUTOMATIZACION.md) | Operación/DevOps | GitHub Actions, calendario, flujo mensual y exit codes |
 | [OPERACION_Y_RECUPERACION.md](OPERACION_Y_RECUPERACION.md) | Operación | Runbook, incidentes, rollback y recuperación |
 | [DICCIONARIO_DATOS.md](DICCIONARIO_DATOS.md) | Datos/analítica | Parquet, columnas, claves, unidades y metadata |
-| [ARQUITECTURA.md](ARQUITECTURA.md) | Desarrollo | Componentes, transacciones, Streamlit y despliegue |
+| [ARQUITECTURA.md](ARQUITECTURA.md) | Desarrollo | Pipeline de datos + capas de la aplicación Streamlit |
 | [PIPELINE.md](PIPELINE.md) | Desarrollo/operación | Secuencia ejecutable resumida del pipeline |
+| [AUDITORIA_COMPLETA.md](AUDITORIA_COMPLETA.md) | Desarrollo | Auditoría previa al refactor institucional, matriz de factibilidad de datos |
+| [ManualTecnico.md](ManualTecnico.md) | Analítica/riesgos | Metodologías, umbrales, qué no está implementado y por qué |
+| [ManualUsuario.md](ManualUsuario.md) | Usuarios finales | Manual funcional por módulo |
+| [DESPLIEGUE.md](DESPLIEGUE.md) | Operación/DevOps | Streamlit Cloud, servidor propio, Docker |
+| [CONTEXTO.md](CONTEXTO.md) | Asistentes/contribuyentes | Ancla anti-alucinación: entrypoint, estructura y errores previos a evitar — debe actualizarse en cada cambio relevante |
 
 Documentos en la raíz:
 
@@ -30,7 +35,7 @@ Documentos en la raíz:
 | ¿Cuántos bancos debe tener el corte? | `scripts/config.py` (`NUMERO_ESPERADO_BANCOS`) |
 | ¿Qué impide una publicación incompleta? | `scripts/validar_actualizacion.py` |
 | ¿Cuándo corre el job? | `.github/workflows/actualizar-datos.yml` |
-| ¿Qué consume Streamlit? | `utils/data_loader.py` y `master_data/` |
+| ¿Qué consume Streamlit? | `services/data_service.py` y `master_data/` |
 | ¿Qué códigos usa la UI? | `config/indicator_mapping.py` |
 | ¿Qué ocurrió en el último intento? | `master_data/update_status.json` y logs de Actions |
 
@@ -39,7 +44,6 @@ Documentos en la raíz:
 Los siguientes documentos se conservan como referencia especializada o histórica. Pueden contener capturas, tamaños, versiones o diseños anteriores y no deben usarse como runbook de producción:
 
 - `BI_MASTER_FILES.md`
-- `CONTEXTO.md`
 - `ESTRUCTURA_EXCEL.md`
 - `ESTRUCTURA_FINAL.md`
 - `GUIA_RAPIDA.md`

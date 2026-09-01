@@ -17,6 +17,10 @@ debug_*.png
 step*.png
 screenshot*.png
 
+# Assets institucionales (logos, etc. - estos SI se incluyen en el repo)
+!assets/
+!assets/*.png
+
 # Archivos temporales
 enlaces_*.txt
 archivos_info.json
@@ -35,6 +39,7 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 ENV/
 build/
 develop-eggs/
@@ -55,6 +60,7 @@ wheels/
 # IDE
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~

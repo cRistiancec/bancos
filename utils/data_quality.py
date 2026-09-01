@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Funciones de validación y análisis de calidad de datos.
+Funciones de validacion y analisis de calidad de datos.
 """
 
 import pandas as pd
@@ -20,6 +20,7 @@ from config.indicator_mapping import (
 )
 
 
+@st.cache_data
 def calcular_completitud_general(calidad_dict: Dict[str, Dict]) -> Dict[str, Any]:
     """
     Calcula metricas de completitud consolidadas.
@@ -50,23 +51,22 @@ def calcular_completitud_general(calidad_dict: Dict[str, Dict]) -> Dict[str, Any
     }
 
 
+@st.cache_data
 def validar_cobertura_bancos(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Genera matriz de cobertura bancos x años.
+    Genera matriz de cobertura bancos x anos.
 
     Args:
         df: DataFrame con columnas 'banco' y 'fecha'
 
     Returns:
-        DataFrame pivotado con bancos en filas y años en columnas
+        DataFrame pivotado con bancos en filas y anos en columnas
     """
     df_temp = df.copy()
-    df_temp['año'] = df_temp['fecha'].dt.year
+    df_temp['ano'] = df_temp['fecha'].dt.year
 
-    # Contar registros por banco y año
-    cobertura = df_temp.groupby(
-        ['banco', 'año'], observed=True
-    ).size().unstack(fill_value=0)
+    # Contar registros por banco y ano
+    cobertura = df_temp.groupby(['banco', 'ano'], observed=True).size().unstack(fill_value=0)
 
     # Convertir a binario (tiene datos o no)
     cobertura_binaria = (cobertura > 0).astype(int)
@@ -74,6 +74,7 @@ def validar_cobertura_bancos(df: pd.DataFrame) -> pd.DataFrame:
     return cobertura_binaria
 
 
+@st.cache_data
 def calcular_cobertura_por_fecha(df: pd.DataFrame) -> pd.DataFrame:
     """
     Calcula cuantos bancos tienen datos por cada fecha.
@@ -81,17 +82,18 @@ def calcular_cobertura_por_fecha(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         DataFrame con fecha y conteo de bancos
     """
-    cobertura = df.groupby('fecha', observed=True)['banco'].nunique().reset_index()
+    cobertura = df.groupby('fecha')['banco'].nunique().reset_index()
     cobertura.columns = ['fecha', 'bancos_con_datos']
     cobertura = cobertura.sort_values('fecha')
 
-    # Agregar columna de año para facilitar visualización
-    cobertura['año'] = cobertura['fecha'].dt.year
+    # Agregar columna de ano para facilitar visualizacion
+    cobertura['ano'] = cobertura['fecha'].dt.year
     cobertura['mes'] = cobertura['fecha'].dt.month
 
     return cobertura
 
 
+@st.cache_data
 def detectar_bancos_faltantes(df: pd.DataFrame) -> List[str]:
     """
     Identifica bancos que deberian estar pero no estan en los datos.
@@ -106,6 +108,7 @@ def detectar_bancos_faltantes(df: pd.DataFrame) -> List[str]:
     return sorted(list(faltantes))
 
 
+@st.cache_data
 def detectar_fechas_faltantes(df: pd.DataFrame) -> List:
     """
     Identifica gaps en la serie temporal mensual.
@@ -135,6 +138,7 @@ def detectar_fechas_faltantes(df: pd.DataFrame) -> List:
     return sorted(list(faltantes))
 
 
+@st.cache_data
 def analizar_nulos_por_indicador(df: pd.DataFrame, top_n: int = 20) -> pd.DataFrame:
     """
     Analiza indicadores con mayor porcentaje de valores nulos.
@@ -146,7 +150,7 @@ def analizar_nulos_por_indicador(df: pd.DataFrame, top_n: int = 20) -> pd.DataFr
     Returns:
         DataFrame con indicador, nulos y porcentaje
     """
-    nulos_por_cuenta = df.groupby('cuenta', observed=True).agg({
+    nulos_por_cuenta = df.groupby('cuenta').agg({
         'valor': [
             ('total', 'count'),
             ('nulos', lambda x: x.isna().sum()),
@@ -162,6 +166,7 @@ def analizar_nulos_por_indicador(df: pd.DataFrame, top_n: int = 20) -> pd.DataFr
     return nulos_por_cuenta.head(top_n).reset_index()
 
 
+@st.cache_data
 def validar_rangos_indicadores(
     df: pd.DataFrame,
     indicador_col: str = 'cuenta',
@@ -205,6 +210,7 @@ def validar_rangos_indicadores(
     return pd.DataFrame(alertas)
 
 
+@st.cache_data
 def validar_ecuacion_contable(
     df: pd.DataFrame,
     fecha=None,
@@ -224,7 +230,12 @@ def validar_ecuacion_contable(
     if fecha is None:
         fecha = df['fecha'].max()
 
-    df_fecha = df[(df['fecha'] == fecha) & (df['hoja'] == 'BAL')]
+    # NOTA: la version original filtraba tambien por (df['hoja']=='BAL'),
+    # columna que no existe en balance.parquet (columnas reales: banco,
+    # fecha, codigo, cuenta, valor, nivel) -- cada parquet ya corresponde a
+    # una unica hoja, por lo que el filtro era redundante e incorrecto
+    # (habria lanzado KeyError). Ver docs/AUDITORIA_COMPLETA.md seccion 5.
+    df_fecha = df[df['fecha'] == fecha]
 
     resultados = []
 

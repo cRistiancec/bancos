@@ -1,35 +1,53 @@
 # -*- coding: utf-8 -*-
 """
-Carga centralizada de datos con validacion y limpieza.
+Capa de acceso a datos: carga centralizada con validacion y limpieza.
+
+Migrado de utils/data_loader.py sin alterar ninguna formula ni logica de
+limpieza existente. Unicamente se centraliza aqui y se agregan agregaciones
+de sistema que antes estaban duplicadas dentro de paginas individuales.
 """
 
 import pandas as pd
 import streamlit as st
+import unicodedata
 from pathlib import Path
 from typing import Tuple, Dict, Any
 import json
+
+from config.indicator_mapping import CODIGOS_BALANCE
 
 # Ruta base de datos
 MASTER_DATA_DIR = Path(__file__).parent.parent / "master_data"
 
 
-def _categorizar_columnas(df: pd.DataFrame, columnas: list[str]) -> pd.DataFrame:
-    """Reduce memoria de columnas textuales repetitivas sin copiar todo el DataFrame."""
-    for columna in columnas:
-        if columna in df.columns and not isinstance(df[columna].dtype, pd.CategoricalDtype):
-            df[columna] = df[columna].astype('category')
-    return df
+def _normalizar_banco(serie: pd.Series) -> pd.Series:
+    """Normaliza la columna 'banco' a NFC.
+
+    El pipeline de origen no es consistente: al menos una entidad
+    ('General Rumiñahui') llega en algunos cortes con la eñe en forma NFD
+    (n + tilde combinante U+0303) en vez de NFC (ñ precompuesta, U+00F1).
+    Visualmente son indistinguibles pero no son la misma cadena de bytes,
+    lo que rompe cualquier comparación exacta contra config/indicator_mapping.py
+    (BANCOS_SISTEMA, COLORES_BANCOS) -- color gris de respaldo y falsos
+    "banco sin datos" en Calidad de Datos. Se normaliza una sola vez aqui,
+    en el punto central de carga, para que todo lo que consume estos
+    DataFrames vea siempre la misma forma.
+    """
+    return serie.map(lambda v: unicodedata.normalize('NFC', v) if isinstance(v, str) else v)
 
 
 def _mascara_texto_valido(serie: pd.Series) -> pd.Series:
-    """Filtra texto vacio de forma eficiente incluso si la serie es categorica."""
-    if isinstance(serie.dtype, pd.CategoricalDtype):
-        categorias_invalidas = [
-            valor for valor in serie.cat.categories
-            if not str(valor).strip()
-        ]
-        return serie.notna() & ~serie.isin(categorias_invalidas)
-    return serie.notna() & serie.str.strip().ne('')
+    """True donde la serie tiene texto no vacio, sin fillna('') sobre la serie.
+
+    Parquet puede devolver columnas de texto muy repetitivas (banco, codigo,
+    cuenta, indicador) como dtype category cuando el archivo fue escrito con
+    dictionary encoding -- pyarrow decide esto por archivo, no es algo que
+    esta capa controle. `serie.fillna('').str.strip() != ''` revienta con
+    "Cannot setitem on a Categorical with a new category" en cuanto la
+    cadena vacia no es ya una categoria existente. Se evita el fillna por
+    completo: NaN se trata directamente como invalido.
+    """
+    return serie.notna() & (serie.astype(str).str.strip() != '')
 
 
 @st.cache_data(ttl=3600)
@@ -45,17 +63,19 @@ def cargar_balance() -> Tuple[pd.DataFrame, Dict[str, Any]]:
     if not filepath.exists():
         raise FileNotFoundError(f"No se encontro {filepath}")
 
-    df = pd.read_parquet(filepath)
-    registros_originales = len(df)
-    df = _categorizar_columnas(df, ['banco', 'codigo', 'cuenta'])
+    df_original = pd.read_parquet(filepath)
+    registros_originales = len(df_original)
+
+    # Limpieza
+    df = df_original.copy()
 
     # 1. Filtrar cuentas vacias
     mask_cuenta_valida = _mascara_texto_valido(df['cuenta'])
-    if not mask_cuenta_valida.all():
-        df = df.loc[mask_cuenta_valida]
+    df = df[mask_cuenta_valida]
 
     # 2. Filtrar valores nulos en columnas clave
     df = df.dropna(subset=['banco', 'fecha'])
+    df['banco'] = _normalizar_banco(df['banco'])
 
     # 3. Convertir fecha a datetime si no lo es
     if not pd.api.types.is_datetime64_any_dtype(df['fecha']):
@@ -78,28 +98,15 @@ def cargar_balance() -> Tuple[pd.DataFrame, Dict[str, Any]]:
     return df, calidad
 
 
-# =============================================================================
-# FUNCIONES ELIMINADAS (ya no se usan en el dashboard):
-# - cargar_indicadores() -> indicadores.parquet (eliminado)
-# - cargar_cartera() -> cartera.parquet (eliminado)
-# - cargar_fuentes_usos() -> fuentes_usos.parquet (eliminado)
-#
-# Solo se mantienen las 3 funciones esenciales:
-# - cargar_balance() -> Hojas BAL (18 MB)
-# - cargar_pyg() -> Hoja PYG (9.5 MB)
-# - cargar_camel() -> Hoja CAMEL (1.6 MB)
-# =============================================================================
-
-
 @st.cache_data(ttl=3600)
 def cargar_pyg() -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Carga pyg.parquet (Pérdidas y Ganancias) con metricas de calidad.
+    Carga pyg.parquet (Perdidas y Ganancias) con metricas de calidad.
 
     Los datos de PYG tienen una estructura especial:
     - valor_acumulado: Valor acumulado en el año (como viene en el Excel)
     - valor_mes: Valor desacumulado del mes individual
-    - valor_12m: Suma móvil de 12 meses (para comparabilidad)
+    - valor_12m: Suma movil de 12 meses (para comparabilidad)
 
     Returns:
         Tuple[DataFrame, Dict]: DataFrame y metricas de calidad
@@ -109,17 +116,18 @@ def cargar_pyg() -> Tuple[pd.DataFrame, Dict[str, Any]]:
     if not filepath.exists():
         raise FileNotFoundError(f"No se encontro {filepath}")
 
-    df = pd.read_parquet(filepath)
-    registros_originales = len(df)
-    df = _categorizar_columnas(df, ['banco', 'codigo', 'cuenta'])
+    df_original = pd.read_parquet(filepath)
+    registros_originales = len(df_original)
+
+    df = df_original.copy()
 
     # Filtrar cuentas vacias
     mask_cuenta_valida = _mascara_texto_valido(df['cuenta'])
-    if not mask_cuenta_valida.all():
-        df = df.loc[mask_cuenta_valida]
+    df = df[mask_cuenta_valida]
 
     # Filtrar valores nulos en columnas clave
     df = df.dropna(subset=['banco', 'fecha'])
+    df['banco'] = _normalizar_banco(df['banco'])
 
     # Convertir fecha a datetime si no lo es
     if not pd.api.types.is_datetime64_any_dtype(df['fecha']):
@@ -164,17 +172,18 @@ def cargar_camel() -> Tuple[pd.DataFrame, Dict[str, Any]]:
     if not filepath.exists():
         raise FileNotFoundError(f"No se encontro {filepath}")
 
-    df = pd.read_parquet(filepath)
-    registros_originales = len(df)
-    df = _categorizar_columnas(df, ['banco', 'codigo', 'indicador', 'categoria'])
+    df_original = pd.read_parquet(filepath)
+    registros_originales = len(df_original)
+
+    df = df_original.copy()
 
     # Filtrar indicadores vacios
     mask_indicador_valido = _mascara_texto_valido(df['indicador'])
-    if not mask_indicador_valido.all():
-        df = df.loc[mask_indicador_valido]
+    df = df[mask_indicador_valido]
 
     # Filtrar valores nulos en columnas clave
     df = df.dropna(subset=['banco', 'fecha'])
+    df['banco'] = _normalizar_banco(df['banco'])
 
     # Convertir fecha a datetime si no lo es
     if not pd.api.types.is_datetime64_any_dtype(df['fecha']):
@@ -200,7 +209,7 @@ def cargar_camel() -> Tuple[pd.DataFrame, Dict[str, Any]]:
 @st.cache_data(ttl=3600)
 def cargar_metadata() -> Dict[str, Any]:
     """
-    Carga metadata.json con información de la última actualización.
+    Carga metadata.json con informacion de la ultima actualizacion.
     """
     filepath = MASTER_DATA_DIR / "metadata.json"
 
@@ -226,7 +235,6 @@ def cargar_todos_los_datos() -> Dict[str, Any]:
         'errores': []
     }
 
-    # Cargar solo los 3 datasets esenciales
     try:
         df_balance, cal_balance = cargar_balance()
         resultado['dataframes']['balance'] = df_balance
@@ -253,7 +261,6 @@ def cargar_todos_los_datos() -> Dict[str, Any]:
     except Exception as e:
         resultado['errores'].append(f"metadata: {str(e)}")
 
-    # Resumen consolidado
     if resultado['dataframes']:
         total_registros = sum(
             cal.get('registros_limpios', 0)
@@ -325,3 +332,78 @@ def obtener_valor_cuenta(
     if resultado.empty:
         return None
     return resultado.iloc[0]
+
+
+# =============================================================================
+# AGREGACIONES DE SISTEMA (antes duplicadas inline en paginas individuales)
+# =============================================================================
+
+@st.cache_data
+def calcular_metricas_sistema(df: pd.DataFrame, fecha) -> dict:
+    """Calcula metricas agregadas del sistema para una fecha.
+
+    Migrado sin cambios desde pages/1_Panorama.py::calcular_metricas_sistema.
+    """
+    df_fecha = df[df['fecha'] == fecha]
+
+    metricas = {}
+
+    activos = df_fecha[df_fecha['codigo'] == CODIGOS_BALANCE['activo_total']]
+    metricas['total_activos'] = activos['valor'].sum() / 1000 if not activos.empty else 0
+
+    cartera = df_fecha[df_fecha['codigo'] == CODIGOS_BALANCE['cartera_creditos']]
+    metricas['total_cartera'] = cartera['valor'].sum() / 1000 if not cartera.empty else 0
+
+    depositos = df_fecha[df_fecha['codigo'] == CODIGOS_BALANCE['obligaciones_publico']]
+    metricas['total_depositos'] = depositos['valor'].sum() / 1000 if not depositos.empty else 0
+
+    patrimonio = df_fecha[df_fecha['codigo'] == CODIGOS_BALANCE['patrimonio']]
+    metricas['total_patrimonio'] = patrimonio['valor'].sum() / 1000 if not patrimonio.empty else 0
+
+    fondos = df_fecha[df_fecha['codigo'] == CODIGOS_BALANCE['fondos_disponibles']]
+    metricas['fondos_disponibles'] = fondos['valor'].sum() / 1000 if not fondos.empty else 0
+
+    metricas['num_bancos'] = df_fecha['banco'].nunique()
+
+    return metricas
+
+
+def obtener_contexto_sistema() -> Dict[str, Any]:
+    """Contexto agregado para el header institucional: bancos, registros,
+    fecha de corte y ultima actualizacion. No calcula indicadores de riesgo,
+    solo metadatos operativos de la plataforma.
+    """
+    contexto = {
+        'num_bancos': None,
+        'total_registros': None,
+        'fecha_corte': None,
+        'fecha_actualizacion': None,
+        'datos_disponibles': False,
+    }
+
+    try:
+        df_balance, calidad_balance = cargar_balance()
+        contexto['num_bancos'] = calidad_balance.get('bancos')
+        contexto['fecha_corte'] = calidad_balance.get('fecha_max')
+        contexto['datos_disponibles'] = True
+
+        total = calidad_balance.get('registros_limpios', 0)
+        try:
+            _, calidad_pyg = cargar_pyg()
+            total += calidad_pyg.get('registros_limpios', 0)
+        except Exception:
+            pass
+        try:
+            _, calidad_camel = cargar_camel()
+            total += calidad_camel.get('registros_limpios', 0)
+        except Exception:
+            pass
+        contexto['total_registros'] = total
+    except Exception:
+        pass
+
+    metadata = cargar_metadata()
+    if metadata and 'error' not in metadata:
+        contexto['fecha_actualizacion'] = metadata.get('fecha_actualizacion')
+
+    return contexto

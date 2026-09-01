@@ -1,11 +1,11 @@
-# Contribuir al Radar Bancario Ecuador
+# Contribuir al Sistema Financiero Privado
 
 Gracias por mejorar el proyecto. Los cambios deben preservar la reproducibilidad del pipeline y la cobertura bancaria publicada.
 
 ## Preparación
 
 ```bash
-git clone https://github.com/jp1309/bancos.git
+git clone <url-del-repositorio>
 cd bancos
 python -m venv .venv
 python -m pip install --upgrade pip
@@ -18,8 +18,8 @@ Use una rama corta y descriptiva creada desde `main`.
 
 ### Interfaz
 
-- Mantenga `Inicio.py` como entrypoint.
-- Reutilice funciones de `utils/` y mapeos de `config/indicator_mapping.py`.
+- Mantenga `app.py` como entrypoint (`Inicio.py` no existe en esta versión).
+- Reutilice funciones de `services/`, `analytics/`, `charts/`, `components/` y mapeos de `config/indicator_mapping.py`.
 - Obtenga bancos y fechas desde los datos; no escriba cifras mensuales a mano.
 - Verifique la página afectada con datos reales y compruebe la consola del navegador.
 
@@ -40,9 +40,9 @@ Use una rama corta y descriptiva creada desde `main`.
 ## Validación obligatoria
 
 ```bash
-python -m unittest discover -s tests -v
+python -m pytest tests/ -v
 python scripts/validar_actualizacion.py
-python -m py_compile Inicio.py dashboard_metadata.py scripts/*.py
+python -m py_compile app.py dashboard_metadata.py scripts/*.py
 ```
 
 En Windows, si el shell no expande `scripts/*.py`, use:
@@ -54,10 +54,10 @@ Get-ChildItem scripts\*.py | ForEach-Object { python -m py_compile $_.FullName }
 Para cambios visuales:
 
 ```bash
-python -m streamlit run Inicio.py
+python -m streamlit run app.py
 ```
 
-Revise Inicio, Panorama, Balance, PyG y CAMEL.
+Revise Resumen Ejecutivo, Panorama Bancario, Balance General, Pérdidas y Ganancias e Indicadores CAMEL como mínimo.
 
 ## Estilo
 

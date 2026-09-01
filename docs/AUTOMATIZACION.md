@@ -111,7 +111,7 @@ Solo si esta validación pasa se prepara el commit automático.
 
 Interfaz:
 
-1. Abrir [Actualizar Datos Bancarios](https://github.com/jp1309/bancos/actions/workflows/actualizar-datos.yml).
+1. Abrir el workflow **Actualizar Datos Bancarios** en la pestaña Actions del repositorio.
 2. Seleccionar **Run workflow**.
 3. Usar la rama `main`.
 4. Revisar el resumen y los pasos omitidos o ejecutados.
@@ -119,10 +119,10 @@ Interfaz:
 CLI:
 
 ```bash
-gh workflow run actualizar-datos.yml --repo jp1309/bancos --ref main
-gh run list --repo jp1309/bancos --workflow actualizar-datos.yml --limit 5
-gh run watch RUN_ID --repo jp1309/bancos --exit-status
-gh run view RUN_ID --repo jp1309/bancos --log
+gh workflow run actualizar-datos.yml --repo cRistiancec/bancos --ref main
+gh run list --repo cRistiancec/bancos --workflow actualizar-datos.yml --limit 5
+gh run watch RUN_ID --repo cRistiancec/bancos --exit-status
+gh run view RUN_ID --repo cRistiancec/bancos --log
 ```
 
 ## Ejecución manual local
@@ -138,7 +138,7 @@ En PowerShell, el código se consulta con `$LASTEXITCODE`.
 Antes de publicar un resultado local:
 
 ```bash
-python -m unittest discover -s tests -v
+python -m pytest tests/ -v
 python scripts/validar_actualizacion.py
 git diff --check
 ```
@@ -147,7 +147,7 @@ git diff --check
 
 - La rama por defecto debe ser `main`; los cron solo se ejecutan desde la rama por defecto.
 - El workflow declara `permissions: contents: write` para el commit automático.
-- Streamlit Cloud debe apuntar a `jp1309/bancos`, rama `main`, archivo `Inicio.py`.
+- Streamlit Cloud debe apuntar al repositorio de despliegue vigente, rama `main`, archivo `app.py`.
 - El workflow tiene timeout de 30 minutos.
 - `NUMERO_ESPERADO_BANCOS = 23` es una barrera intencional. Una fusión, cierre o nueva entidad requiere revisión humana antes de cambiarlo.
 

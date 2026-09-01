@@ -1,0 +1,8 @@
+-r requirements.txt
+pytest>=8.0
+
+# tests/test_actualizacion.py ejerce scripts/fuente_bancos.py y
+# scripts/validar_actualizacion.py, que dependen de openpyxl. No se agrega
+# selenium/webdriver-manager aqui (no los necesita la suite de pruebas) --
+# solo requirements-scraping.txt trae eso, para la descarga real.
+openpyxl>=3.1

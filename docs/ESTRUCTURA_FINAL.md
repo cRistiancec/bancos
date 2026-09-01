@@ -1,3 +1,11 @@
+> **Documento histórico** — describe el dashboard de 4 módulos
+> (`Inicio.py` + `pages/1-4_*.py`) previo a la refactorización institucional
+> de 2026-07-27 y a la integración con la automatización de datos de
+> 2026-08-31. El entry point actual es `app.py` (23 páginas en
+> `pages/*.py`, sin `Inicio.py` ni `archived_pages/`). Para el estado
+> actual, ver `README.md`, `docs/ARQUITECTURA.md` y `docs/CONTEXTO.md`. Se
+> conserva sin modificar como registro histórico.
+
 # Estructura Final del Dashboard - Radar Bancario Ecuador
 
 **Version**: 4.2.1

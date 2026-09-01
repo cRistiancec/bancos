@@ -15,6 +15,16 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import fuente_bancos
 import validar_actualizacion as validador
 
+# scripts/config.py (config del scraper) y el paquete config/ de la app
+# (config/indicator_mapping.py, etc.) comparten el nombre "config". Al
+# correr la suite completa en un solo proceso, el "import config" de
+# validar_actualizacion cachea scripts/config.py bajo sys.modules['config'],
+# lo que rompe "from config.indicator_mapping import ..." en los demas
+# modulos de prueba que se coleccionan despues. Se revierte el path y se
+# limpia el cache para no filtrar este "config" al resto de la suite.
+sys.path.remove(str(ROOT / "scripts"))
+sys.modules.pop("config", None)
+
 
 def crear_excel(ruta: Path, fecha: str, omitir: str | None = None):
     libro = Workbook()
