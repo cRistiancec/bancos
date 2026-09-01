@@ -12,14 +12,24 @@ Este script genera: master_data/camel.parquet
 
 import pandas as pd
 import numpy as np
+import re
 from pathlib import Path
 from datetime import datetime
+import sys
 import warnings
 
 warnings.filterwarnings('ignore')
 
+if sys.platform == 'win32' and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
+# Agregar directorio de scripts al path para importar config
+sys.path.insert(0, str(Path(__file__).parent))
+import config
+
 # Configuracion
-DATOS_DIR = Path("datos_bancos_diciembre_2025/archivos_excel")
+DATOS_DIR = Path(config.get_carpeta_salida()) / "archivos_excel"
 OUTPUT_DIR = Path("master_data")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -83,13 +93,13 @@ INDICADORES_CAMEL = {
 
 
 def extraer_nombre_banco(ruta_archivo: Path) -> str:
-    """Extrae el nombre del banco de la ruta del archivo."""
+    """Extrae el nombre del banco de la ruta del archivo, quitando el sufijo MES AÑO."""
     nombre_carpeta = ruta_archivo.parent.name
-    # Formato: "Banco FECHA" -> extraer "Banco"
-    partes = nombre_carpeta.rsplit(' ', 2)  # Separar por espacios desde el final
-    if len(partes) >= 3:
-        return partes[0]  # Nombre del banco
-    return nombre_carpeta.split(' ')[0]
+    nombre = re.sub(
+        r'\s+(ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)\s+\d{4}$',
+        '', nombre_carpeta, flags=re.IGNORECASE
+    )
+    return nombre.strip()
 
 
 def procesar_archivo_camel(ruta_archivo: Path) -> pd.DataFrame:
@@ -185,12 +195,12 @@ def main():
     print(f"\nArchivos encontrados: {len(archivos)}")
 
     if not archivos:
-        print("No se encontraron archivos Excel")
-        return
+        raise RuntimeError("No se encontraron archivos Excel para CAMEL")
 
     # Procesar cada archivo
     dataframes = []
     bancos_procesados = set()
+    archivos_error = []
 
     for i, archivo in enumerate(archivos, 1):
         banco = extraer_nombre_banco(archivo)
@@ -204,10 +214,15 @@ def main():
             print(f"  -> {len(df):,} registros")
         else:
             print(f"  -> Sin datos CAMEL")
+            archivos_error.append(archivo.parent.name)
 
     if not dataframes:
-        print("\nNo se procesaron datos")
-        return
+        raise RuntimeError("No se procesaron datos CAMEL")
+
+    if archivos_error:
+        raise RuntimeError(
+            f"CAMEL incompleto; archivos con error: {', '.join(archivos_error)}"
+        )
 
     # Consolidar
     print("\n" + "=" * 60)
@@ -226,6 +241,9 @@ def main():
     # Ordenar
     df_final = df_final.sort_values(['banco', 'codigo', 'fecha'])
 
+    for columna in ['banco', 'codigo', 'indicador', 'categoria']:
+        df_final[columna] = df_final[columna].astype('category')
+
     # Estadisticas
     print(f"\nRegistros totales: {len(df_final):,}")
     print(f"Bancos: {df_final['banco'].nunique()}")
@@ -242,7 +260,9 @@ def main():
 
     # Guardar
     output_file = OUTPUT_DIR / "camel.parquet"
-    df_final.to_parquet(output_file, index=False)
+    output_temporal = output_file.with_suffix(".parquet.tmp")
+    df_final.to_parquet(output_temporal, index=False)
+    output_temporal.replace(output_file)
     print(f"\nArchivo guardado: {output_file}")
     print(f"Tamano: {output_file.stat().st_size / 1024 / 1024:.2f} MB")
 

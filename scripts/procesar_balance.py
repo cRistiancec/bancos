@@ -18,12 +18,21 @@ from pathlib import Path
 from datetime import datetime
 import re
 import json
+import sys
+
+if sys.platform == 'win32' and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
+# Agregar directorio de scripts al path para importar config
+sys.path.insert(0, str(Path(__file__).parent))
+import config
 
 # =============================================================================
 # CONFIGURACION
 # =============================================================================
 
-EXCEL_DIR = Path("datos_bancos_diciembre_2025/archivos_excel")
+EXCEL_DIR = Path(config.get_carpeta_salida()) / "archivos_excel"
 MASTER_DIR = Path("master_data")
 
 # Crear directorio si no existe
@@ -160,8 +169,7 @@ def main():
     carpetas = [d for d in EXCEL_DIR.iterdir() if d.is_dir()]
 
     if not carpetas:
-        print(f"[ERROR] No se encontraron carpetas en {EXCEL_DIR}")
-        return
+        raise RuntimeError(f"No se encontraron carpetas en {EXCEL_DIR}")
 
     print(f"\n[INFO] Encontrados {len(carpetas)} bancos\n")
 
@@ -200,20 +208,26 @@ def main():
     print("=" * 70)
 
     if not todos_los_dfs:
-        print("[ERROR] No se procesaron datos")
-        return
+        raise RuntimeError("No se procesaron datos de Balance")
+
+    if bancos_error:
+        raise RuntimeError(
+            f"Balance incompleto; bancos con error: {', '.join(bancos_error)}"
+        )
 
     df_consolidado = pd.concat(todos_los_dfs, ignore_index=True)
 
     # Optimizar tipos
     df_consolidado['banco'] = df_consolidado['banco'].astype('category')
-    df_consolidado['codigo'] = df_consolidado['codigo'].astype(str)
-    df_consolidado['cuenta'] = df_consolidado['cuenta'].astype(str)
+    df_consolidado['codigo'] = df_consolidado['codigo'].astype('category')
+    df_consolidado['cuenta'] = df_consolidado['cuenta'].astype('category')
     df_consolidado['nivel'] = df_consolidado['nivel'].astype('int8')
 
     # Guardar Parquet
     ruta_parquet = MASTER_DIR / "balance.parquet"
-    df_consolidado.to_parquet(ruta_parquet, index=False, compression='snappy')
+    ruta_temporal = ruta_parquet.with_suffix(".parquet.tmp")
+    df_consolidado.to_parquet(ruta_temporal, index=False, compression='snappy')
+    ruta_temporal.replace(ruta_parquet)
 
     tamano_mb = ruta_parquet.stat().st_size / (1024 * 1024)
 
@@ -236,8 +250,11 @@ def main():
         'hojas_procesadas': ['BAL']
     }
 
-    with open(MASTER_DIR / "metadata.json", 'w', encoding='utf-8') as f:
+    ruta_metadata = MASTER_DIR / "metadata.json"
+    ruta_metadata_temporal = ruta_metadata.with_suffix(".json.tmp")
+    with open(ruta_metadata_temporal, 'w', encoding='utf-8') as f:
         json.dump(metadata, f, indent=2, ensure_ascii=False)
+    ruta_metadata_temporal.replace(ruta_metadata)
 
     print(f"\n[OK] Metadata guardada en {MASTER_DIR / 'metadata.json'}")
 

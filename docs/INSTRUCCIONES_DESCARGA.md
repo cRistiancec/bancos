@@ -22,7 +22,7 @@ Antes de ejecutar el script, verifica manualmente que los datos estén disponibl
 
 ### 2. Actualizar Configuración
 
-Abre el archivo [`config.py`](config.py) y actualiza estas líneas:
+Abre el archivo [`scripts/config.py`](../scripts/config.py) y actualiza estas líneas:
 
 ```python
 # ============================================================================
@@ -208,7 +208,7 @@ mv datos_bancos_enero_2026 descargas/2026_enero/
 
 ### Ajustar Tiempos de Espera
 
-Si tu conexión es lenta o el sitio tarda en cargar, ajusta estos valores en [`config.py`](config.py):
+Si tu conexión es lenta o el sitio tarda en cargar, ajusta estos valores en [`scripts/config.py`](../scripts/config.py):
 
 ```python
 # Tiempos de espera (en segundos)

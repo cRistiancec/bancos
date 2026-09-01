@@ -1,7 +1,12 @@
-# Archivos descargados
+# Archivos descargados (temporales)
 descargas/
 datos_bancos*/
 *.zip
+
+# Datos master (estos SÍ se incluyen en el repo)
+!master_data/
+!master_data/*.parquet
+!master_data/*.json
 
 # Screenshots y debug
 screenshots_debug/
@@ -12,11 +17,19 @@ debug_*.png
 step*.png
 screenshot*.png
 
+# Assets institucionales (logos, etc. - estos SI se incluyen en el repo)
+!assets/
+!assets/*.png
+
 # Archivos temporales
-*.json
-*.txt
 enlaces_*.txt
 archivos_info.json
+check_result.txt
+
+# JSON temporales (excepto master_data/)
+/*.json
+/scripts/*.json
+!/master_data/*.json
 
 # Python
 __pycache__/
@@ -26,6 +39,7 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 ENV/
 build/
 develop-eggs/
@@ -46,6 +60,7 @@ wheels/
 # IDE
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~
@@ -64,7 +79,6 @@ chromedriver*
 
 # Streamlit
 .streamlit/secrets.toml
-.streamlit/config.toml
 
 # Jupyter Notebook
 .ipynb_checkpoints

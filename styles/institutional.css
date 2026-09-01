@@ -1,0 +1,170 @@
+/* Sistema Financiero Privado - COSEDE
+   Refinamientos institucionales sobre el tema oscuro nativo de Streamlit
+   definido en .streamlit/config.toml. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
+
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+
+/* ============ HEADER INSTITUCIONAL ============ */
+.sfp-header {
+    background: linear-gradient(135deg, #0D3B4A 0%, #1B4C8C 60%, #1B4C8C 100%);
+    padding: 1.25rem 1.75rem;
+    border-radius: 14px;
+    margin-bottom: 1.5rem;
+    border: 1px solid #2A3550;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.sfp-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.sfp-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.sfp-wordmark {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: #F5F7FA;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+}
+
+.sfp-title h1 {
+    color: #FFFFFF;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.sfp-title p {
+    color: rgba(245,247,250,0.82);
+    font-size: 0.82rem;
+    margin: 0.15rem 0 0 0;
+}
+
+.sfp-header-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-size: 0.78rem;
+    color: rgba(245,247,250,0.9);
+}
+
+.sfp-header-meta strong {
+    display: block;
+    font-size: 0.95rem;
+    color: #FFFFFF;
+}
+
+/* ============ TARJETAS KPI ============ */
+.sfp-kpi-card {
+    background: #151C2C;
+    border: 1px solid #2A3550;
+    border-radius: 12px;
+    padding: 1.1rem 1.2rem;
+    margin-bottom: 1rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.sfp-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.sfp-kpi-value {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #F5F7FA;
+}
+.sfp-kpi-label {
+    font-size: 0.75rem;
+    color: #9AA5B8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0.15rem;
+}
+
+/* ============ BADGE DE SEVERIDAD ============ */
+.sfp-badge {
+    display: inline-block;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    background: rgba(255,255,255,0.04);
+}
+
+.sfp-semaforo-general {
+    margin: 0.5rem 0 1rem 0;
+}
+
+/* ============ MODULO EN PREPARACION ============ */
+.sfp-en-preparacion {
+    background: #151C2C;
+    border: 1px dashed #2A3550;
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: #9AA5B8;
+    text-align: center;
+}
+.sfp-en-preparacion strong {
+    color: #F5F7FA;
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 1rem;
+}
+
+/* ============ TABS ============ */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 6px;
+    background: #151C2C;
+    padding: 0.4rem;
+    border-radius: 10px;
+    border: 1px solid #2A3550;
+}
+.stTabs [data-baseweb="tab"] {
+    background: transparent;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    color: #9AA5B8;
+}
+.stTabs [aria-selected="true"] {
+    background: #1B4C8C;
+    color: #FFFFFF !important;
+}
+
+/* ============ SIDEBAR ============ */
+section[data-testid="stSidebar"] {
+    background: #0E1420;
+    border-right: 1px solid #2A3550;
+}
+
+/* ============ METRICAS NATIVAS ============ */
+[data-testid="stMetricValue"] {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #F5F7FA;
+}
+[data-testid="stMetricLabel"] {
+    font-size: 0.78rem;
+    color: #9AA5B8;
+    text-transform: uppercase;
+}

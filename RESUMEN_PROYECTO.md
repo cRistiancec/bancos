@@ -1,4 +1,10 @@
-# Radar Bancario Ecuador - Resumen del Proyecto
+> **Documento histórico** — describe el estado del proyecto anterior a la
+> refactorización institucional de 2026-07-27 ("Sistema Financiero Privado").
+> Para el estado actual, ver `README.md`, `docs/ARQUITECTURA.md` y
+> `docs/AUDITORIA_COMPLETA.md`. Se conserva sin modificar como registro
+> histórico del proyecto original.
+
+# Radar Bancario Ecuador - Resumen del Proyecto (histórico)
 
 ## Dashboard de Business Intelligence para el Sistema Bancario Ecuatoriano
 

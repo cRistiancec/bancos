@@ -299,20 +299,46 @@ RANGOS_INDICADORES = {
 # =============================================================================
 # LISTA DE BANCOS ESPERADOS
 # =============================================================================
+# IMPORTANTE: estos nombres deben coincidir EXACTAMENTE con los valores reales
+# de la columna 'banco' en master_data/*.parquet (incluye tildes/variantes de
+# nombre tal como los reporta la Superintendencia). Antes del pulido de
+# 2026-07-27 esta lista tenia 'Atlantida', 'Comercial Manabi' y 'Ruminahui'
+# sin tilde/variante -- corregido entonces, ver docs/AUDITORIA_COMPLETA.md.
+#
+# Segunda corrección (2026-08-31, integración con la línea de datos del
+# repositorio original): al reemplazar master_data/*.parquet (dic-2025) por
+# el corte real más reciente (jun-2026, pipeline de `jp1309/bancos`), se
+# verificó de nuevo la columna 'banco' contra los tres parquet y aparecieron
+# variantes distintas para 3 entidades, más una que no existe en absoluto en
+# los datos publicados por ese pipeline:
+#   'Atlantida (antes DMiro)'  -> 'Atlantida'
+#   'Comercial Manabí'         -> 'Comercial de Manabí'
+#   'Rumiñahui'                -> 'General Rumiñahui'
+#   'Visionfund'                -> 'VisionFund' (capitalización)
+#   'Amibank'                   -> eliminado: 0 filas en balance/pyg/camel en
+#                                  las 276 fechas del pipeline vigente (no es
+#                                  una entidad que dejó de reportar; nunca
+#                                  aparece en esta fuente). NO VERIFICABLE si
+#                                  se trataba de un artefacto de parseo del
+#                                  pipeline anterior o de una entidad distinta
+#                                  — no se investiga más a fondo porque no
+#                                  afecta ninguna cifra ya publicada.
+# Sin este ajuste, estas 4 entidades habrían vuelto a heredar el mismo bug
+# de color gris de respaldo / "sin datos" falso que ya se había corregido.
 
 BANCOS_SISTEMA = [
     'Amazonas',
-    'Amibank',
     'Atlantida',
     'Austro',
     'Bolivariano',
     'Capital',
     'Citibank',
     'Codesarrollo',
-    'Comercial Manabi',
+    'Comercial de Manabí',
     'Coopnacional',
     'DelBank',
     'Diners',
+    'General Rumiñahui',
     'Guayaquil',
     'Internacional',
     'Litoral',
@@ -322,9 +348,8 @@ BANCOS_SISTEMA = [
     'Pichincha',
     'Procredit',
     'Produbanco',
-    'Ruminahui',
     'Solidario',
-    'Visionfund',
+    'VisionFund',
 ]
 
 # =============================================================================
@@ -344,7 +369,7 @@ COLORES_BANCOS = {
     'Machala': '#7f7f7f',        # Gris
     'Loja': '#bcbd22',           # Verde oliva
     'Solidario': '#17becf',      # Cian
-    'Ruminahui': '#aec7e8',      # Azul claro
+    'General Rumiñahui': '#aec7e8', # Azul claro
     'Diners': '#ffbb78',         # Naranja claro
     'Capital': '#98df8a',        # Verde claro
     'Procredit': '#ff9896',      # Rojo claro
@@ -352,11 +377,10 @@ COLORES_BANCOS = {
     'DelBank': '#c49c94',        # Marrón claro
     'Litoral': '#f7b6d2',        # Rosa claro
     'Citibank': '#c7c7c7',       # Gris claro
-    'Comercial Manabi': '#dbdb8d', # Verde oliva claro
+    'Comercial de Manabí': '#dbdb8d', # Verde oliva claro
     'Codesarrollo': '#9edae5',   # Cian claro
-    'Visionfund': '#e7ba52',     # Dorado
+    'VisionFund': '#e7ba52',     # Dorado
     'Atlantida': '#ad494a',      # Rojo oscuro
-    'Amibank': '#8c6d31',        # Café oscuro
     'Amazonas': '#de9ed6',       # Rosa medio
 }
 
@@ -370,3 +394,56 @@ def obtener_color_banco(banco: str) -> str:
         Código hexadecimal del color
     """
     return COLORES_BANCOS.get(banco, '#636363')  # Color gris por defecto
+
+
+# =============================================================================
+# INDICADORES CAMEL: escalas de color y rangos de referencia para heatmaps
+# =============================================================================
+# Migrado desde pages/4_CAMEL.py (antes duplicado ahi como unica fuente).
+# Centralizado aqui para que cualquier pagina que visualice indicadores CAMEL
+# use la misma convencion de color/rango.
+
+INDICADORES_PRINCIPALES = {
+    grupo: [(codigo, ETIQUETAS_INDICADORES.get(codigo, codigo)) for codigo in codigos]
+    for grupo, codigos in GRUPOS_INDICADORES.items()
+}
+
+ESCALAS_COLORES_HEATMAP = {
+    # Mayor es mejor
+    'SOL': 'RdYlGn', 'ROA': 'RdYlGn', 'ROE': 'RdYlGn', 'LIQ': 'RdYlGn',
+    'AP_PC': 'RdYlGn', 'CAR_ACT': 'RdYlGn',
+    'COB_TOT': 'RdYlGn', 'COB_CONS': 'RdYlGn', 'COB_INMOB': 'RdYlGn',
+    'COB_INMOB_VIP': 'RdYlGn', 'COB_VIS': 'RdYlGn', 'COB_MICRO': 'RdYlGn',
+    'COB_EDU': 'RdYlGn', 'COB_PROD': 'RdYlGn', 'COB_INV_PUB': 'RdYlGn',
+    'COB_COM_PRIO': 'RdYlGn', 'COB_CONS_PRIO': 'RdYlGn',
+
+    # Menor es mejor
+    'AIN': 'RdYlGn_r', 'GO_MNF': 'RdYlGn_r', 'GO_ACT': 'RdYlGn_r', 'GP_ACT': 'RdYlGn_r',
+    'MOR_TOT': 'RdYlGn_r', 'MOR_CONS': 'RdYlGn_r', 'MOR_INMOB': 'RdYlGn_r',
+    'MOR_INMOB_VIP': 'RdYlGn_r', 'MOR_VIS': 'RdYlGn_r', 'MOR_MICRO': 'RdYlGn_r',
+    'MOR_EDU': 'RdYlGn_r', 'MOR_PROD': 'RdYlGn_r', 'MOR_INV_PUB': 'RdYlGn_r',
+
+    # Neutros
+    'INV_ACT': 'Blues', 'DEP_BRECHA': 'Blues', 'DEP_SPREAD': 'Blues',
+    'PART_CONS': 'Blues', 'PART_INMOB': 'Blues', 'PART_INMOB_VIP': 'Blues',
+    'PART_VIS': 'Blues', 'PART_MICRO': 'Blues', 'PART_EDU': 'Blues',
+    'PART_PROD': 'Blues', 'PART_INV_PUB': 'Blues',
+}
+
+RANGOS_HEATMAP = {
+    'SOL': [0, 20],
+    'ROA': [-5, 5], 'ROE': [-20, 30], 'DEP_BRECHA': [0, 10], 'DEP_SPREAD': [0, 10],
+    'LIQ': [0, 50],
+    'AIN': [0, 40], 'CAR_ACT': [0, 100], 'INV_ACT': [0, 50],
+    'MOR_TOT': [0, 10], 'MOR_CONS': [0, 10], 'MOR_INMOB': [0, 10],
+    'MOR_INMOB_VIP': [0, 10], 'MOR_VIS': [0, 10], 'MOR_MICRO': [0, 10],
+    'MOR_EDU': [0, 10], 'MOR_PROD': [0, 10], 'MOR_INV_PUB': [0, 10],
+    'COB_TOT': [0, 300], 'COB_CONS': [0, 300], 'COB_INMOB': [0, 300],
+    'COB_INMOB_VIP': [0, 300], 'COB_VIS': [0, 300], 'COB_MICRO': [0, 300],
+    'COB_EDU': [0, 300], 'COB_PROD': [0, 300], 'COB_INV_PUB': [0, 300],
+    'COB_COM_PRIO': [0, 300], 'COB_CONS_PRIO': [0, 300],
+    'PART_CONS': [0, 100], 'PART_INMOB': [0, 100], 'PART_INMOB_VIP': [0, 100],
+    'PART_VIS': [0, 100], 'PART_MICRO': [0, 100], 'PART_EDU': [0, 100],
+    'PART_PROD': [0, 100], 'PART_INV_PUB': [0, 100],
+    'AP_PC': [80, 120], 'GO_MNF': [0, 200], 'GO_ACT': [0, 10], 'GP_ACT': [0, 5],
+}

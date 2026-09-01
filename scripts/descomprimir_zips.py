@@ -7,6 +7,7 @@ Script para descomprimir archivos ZIP ya descargados
 
 import sys
 import os
+import re
 import zipfile
 
 # Configurar encoding para Windows
@@ -46,7 +47,7 @@ def descomprimir_directorio(zip_dir):
     for idx, zip_filename in enumerate(archivos_zip, 1):
         try:
             zip_path = os.path.join(zip_dir, zip_filename)
-            banco_name = zip_filename.replace('.zip', '').replace('Series Banco ', '')
+            banco_name = re.sub(r'^Series\s*Banco\s*', '', zip_filename.replace('.zip', ''), flags=re.IGNORECASE)
 
             print(f"[{idx:3}/{len(archivos_zip)}] {banco_name[:50]:50} ... ", end='', flush=True)
 

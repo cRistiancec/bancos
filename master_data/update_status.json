@@ -1,0 +1,13 @@
+{
+  "fecha_ejecucion": "2026-07-08T15:18:33.369970",
+  "periodo_objetivo": "JUNIO 2026",
+  "exitoso": true,
+  "pasos_completados": [
+    "descarga",
+    "balance",
+    "pyg",
+    "camel",
+    "verificacion"
+  ],
+  "ultimo_periodo_descargado": "JUNIO 2026"
+}

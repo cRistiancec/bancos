@@ -1,201 +1,67 @@
-# Documentación - Radar Bancario Ecuador
+# Documentación técnica
 
-Índice de documentación técnica del dashboard de Business Intelligence.
+Este directorio contiene la documentación del Sistema Financiero Privado (evolución institucional del Radar Bancario Ecuador). Los documentos de la primera tabla son las fuentes de verdad operativas; si una nota histórica contradice estos archivos o el código, prevalecen el código vigente y esta documentación autoritativa.
 
-## 📋 Documentos Disponibles
+## Documentos autoritativos
 
-### Guías de Usuario
+| Documento | Audiencia | Contenido |
+|---|---|---|
+| [AUTOMATIZACION.md](AUTOMATIZACION.md) | Operación/DevOps | GitHub Actions, calendario, flujo mensual y exit codes |
+| [OPERACION_Y_RECUPERACION.md](OPERACION_Y_RECUPERACION.md) | Operación | Runbook, incidentes, rollback y recuperación |
+| [DICCIONARIO_DATOS.md](DICCIONARIO_DATOS.md) | Datos/analítica | Parquet, columnas, claves, unidades y metadata |
+| [ARQUITECTURA.md](ARQUITECTURA.md) | Desarrollo | Pipeline de datos + capas de la aplicación Streamlit |
+| [PIPELINE.md](PIPELINE.md) | Desarrollo/operación | Secuencia ejecutable resumida del pipeline |
+| [AUDITORIA_COMPLETA.md](AUDITORIA_COMPLETA.md) | Desarrollo | Auditoría previa al refactor institucional, matriz de factibilidad de datos |
+| [ManualTecnico.md](ManualTecnico.md) | Analítica/riesgos | Metodologías, umbrales, qué no está implementado y por qué |
+| [ManualUsuario.md](ManualUsuario.md) | Usuarios finales | Manual funcional por módulo |
+| [DESPLIEGUE.md](DESPLIEGUE.md) | Operación/DevOps | Streamlit Cloud, servidor propio, Docker |
+| [CONTEXTO.md](CONTEXTO.md) | Asistentes/contribuyentes | Ancla anti-alucinación: entrypoint, estructura y errores previos a evitar — debe actualizarse en cada cambio relevante |
 
-| Documento | Descripción |
-|-----------|-------------|
-| [GUIA_RAPIDA.md](GUIA_RAPIDA.md) | Guía rápida para usar el sistema de descarga y procesamiento |
-| [INSTRUCCIONES_DESCARGA.md](INSTRUCCIONES_DESCARGA.md) | Instrucciones detalladas para descargar datos |
+Documentos en la raíz:
 
-### Especificaciones Técnicas
+| Documento | Contenido |
+|---|---|
+| [../README.md](../README.md) | Presentación, estado, instalación y mapa de documentación |
+| [../QUICKSTART.md](../QUICKSTART.md) | Puesta en marcha local y ejecución manual |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md) | Reglas para cambios, pruebas y PR |
+| [../RESUMEN_PROYECTO.md](../RESUMEN_PROYECTO.md) | Ficha ejecutiva del proyecto |
+| [../LICENSE](../LICENSE) | Licencia MIT del software y nota de fuente de datos |
 
-| Documento | Descripción |
-|-----------|-------------|
-| [ESTRUCTURA_EXCEL.md](ESTRUCTURA_EXCEL.md) | Estructura de archivos Excel de la Superintendencia |
-| [BI_MASTER_FILES.md](BI_MASTER_FILES.md) | Especificación de archivos master consolidados |
-| [VISUALIZACIONES.md](VISUALIZACIONES.md) | Diseño conceptual del dashboard (plan inicial) |
-| [PROCESAMIENTO_PYG.md](PROCESAMIENTO_PYG.md) | Procesamiento de hoja PYG con desacumulación y suma móvil 12M |
-| [SCRIPTS_PROCESAMIENTO.md](SCRIPTS_PROCESAMIENTO.md) | Documentación completa de todos los scripts de procesamiento |
+## Fuente de verdad por tema
 
-### Visualizaciones Implementadas
+| Pregunta | Fuente |
+|---|---|
+| ¿Cuál es el último mes publicado? | `master_data/metadata.json` y los tres Parquet |
+| ¿Cuántos bancos debe tener el corte? | `scripts/config.py` (`NUMERO_ESPERADO_BANCOS`) |
+| ¿Qué impide una publicación incompleta? | `scripts/validar_actualizacion.py` |
+| ¿Cuándo corre el job? | `.github/workflows/actualizar-datos.yml` |
+| ¿Qué consume Streamlit? | `services/data_service.py` y `master_data/` |
+| ¿Qué códigos usa la UI? | `config/indicator_mapping.py` |
+| ¿Qué ocurrió en el último intento? | `master_data/update_status.json` y logs de Actions |
 
-| Documento | Descripción | Versión |
-|-----------|-------------|---------|
-| [MODULO_PANORAMA.md](MODULO_PANORAMA.md) | Módulo Panorama completo (Activos, Pasivos, Crecimiento) | 2.0 |
-| [VISUALIZACION_CRECIMIENTO.md](VISUALIZACION_CRECIMIENTO.md) | Gráficos de crecimiento anual por banco (barras horizontales) | 1.0 |
-| [MODULO_SERIES_TEMPORALES.md](MODULO_SERIES_TEMPORALES.md) | Módulo de series temporales avanzadas (3 visualizaciones) | 1.0 |
-| [MODULO_RENTABILIDAD.md](MODULO_RENTABILIDAD.md) | Módulo de rentabilidad y resultados PYG (6 visualizaciones) | 1.0 |
+## Notas de diseño e historia
 
-## 📊 Estructura del Dashboard
+Los siguientes documentos se conservan como referencia especializada o histórica. Pueden contener capturas, tamaños, versiones o diseños anteriores y no deben usarse como runbook de producción:
 
-### Módulos Principales
+- `BI_MASTER_FILES.md`
+- `ESTRUCTURA_EXCEL.md`
+- `ESTRUCTURA_FINAL.md`
+- `GUIA_RAPIDA.md`
+- `INSTRUCCIONES_DESCARGA.md`
+- `MODULO_PANORAMA.md`
+- `MODULO_RENTABILIDAD.md`
+- `MODULO_SERIES_TEMPORALES.md`
+- `PROCESAMIENTO_PYG.md`
+- `SCRIPTS_PROCESAMIENTO.md`
+- `VISUALIZACION_CRECIMIENTO.md`
+- `VISUALIZACIONES.md`
 
-```
-pages/
-├── 0_Calidad.py             # Validación de calidad de datos
-├── 1_Panorama.py            # Vista general del sistema
-├── 2_Balance_General.py     # Análisis temporal de balance
-└── 3_Perdidas_Ganancias.py  # Rentabilidad y resultados (PYG)
-```
+## Mantenimiento documental
 
-### Utilidades
+Cuando cambie el pipeline:
 
-```
-utils/
-├── data_loader.py      # Carga centralizada de datos
-├── data_quality.py     # Funciones de validación
-└── charts.py           # Componentes gráficos reutilizables
-```
-
-### Configuración
-
-```
-config/
-└── indicator_mapping.py  # Mapeo de códigos contables
-```
-
-## 🎨 Guía de Visualizaciones
-
-### Tipos de Gráficos Implementados
-
-1. **KPI Cards** - Métricas principales del sistema
-2. **Treemap Jerárquico** - Composición de activos con drill-down
-3. **Barras Horizontales** - Rankings y comparaciones
-4. **Barras de Crecimiento** - Variaciones anuales por banco
-5. **Gráficos de Línea** - Series temporales y evolución
-6. **Heatmap** - Crecimiento anual por banco
-7. **Waterfall** - Cascada de formación de márgenes
-8. **Pie Charts** - Composición porcentual
-
-### Paleta de Colores
-
-- **Primario**: Azul (`#1f77b4`)
-- **Acento**: Naranja (`#ff7f0e`)
-- **Éxito**: Verde (`#2ca02c`)
-- **Alerta**: Rojo (`#d62728`)
-- **Escala de Crecimiento**: RdYlGn (Rojo-Amarillo-Verde)
-
-## 🔧 Convenciones de Código
-
-### Funciones Cacheadas
-
-Todas las funciones de procesamiento de datos usan `@st.cache_data`:
-
-```python
-@st.cache_data
-def obtener_datos(df: pd.DataFrame, fecha) -> pd.DataFrame:
-    """
-    Descripción breve de la función.
-
-    Args:
-        df: DataFrame de entrada
-        fecha: Fecha de análisis
-
-    Returns:
-        DataFrame procesado
-    """
-    # Implementación
-    return resultado
-```
-
-### Códigos Contables
-
-Usar siempre constantes de `config/indicator_mapping.py`:
-
-```python
-from config.indicator_mapping import CODIGOS_BALANCE
-
-# Correcto
-codigo = CODIGOS_BALANCE['activo_total']  # '1'
-
-# Incorrecto (no usar strings directos)
-codigo = '1'  # ❌
-```
-
-### Formato de Valores
-
-- **Millones de USD**: Dividir por 1000
-- **Porcentajes**: Multiplicar por 100
-- **Formato de display**: `f"${valor:,.0f}M"` o `f"{valor:.1f}%"`
-
-## 📐 Estándares de Layout
-
-### Alturas de Gráficos
-
-- **KPIs**: N/A (auto)
-- **Gráficos principales**: 400-500px
-- **Gráficos con muchos elementos**: `max(400, n_elementos * 20)`
-- **Treemaps**: 500px
-- **Tablas**: Auto con scroll
-
-### Columnas de Streamlit
-
-```python
-# Dos columnas con proporción 2:1
-col_left, col_right = st.columns([2, 1])
-
-# Tres columnas iguales
-col1, col2, col3 = st.columns(3)
-
-# Cinco columnas para KPIs
-col1, col2, col3, col4, col5 = st.columns(5)
-```
-
-## 🚀 Proceso de Desarrollo
-
-### Agregar Nueva Visualización
-
-1. **Documentar**: Crear archivo MD en `docs/`
-2. **Implementar**: Agregar función en archivo de página
-3. **Testear**: Verificar con datos reales
-4. **Actualizar**: Modificar este README con el nuevo componente
-
-### Modificar Visualización Existente
-
-1. **Revisar documentación**: Leer el archivo MD correspondiente
-2. **Hacer cambios**: Implementar mejoras
-3. **Actualizar doc**: Modificar MD con cambios realizados
-4. **Versionar**: Incrementar número de versión en doc
-
-## 📝 Changelog
-
-### Enero 2026
-
-- **26/01/2026**: Reestructuración del dashboard (v4.0.0)
-  - Simplificación de 8 a 4 módulos principales
-  - Eliminación de módulos CAMEL, Comparador, Evolución, Perfil
-  - Renombrado de módulos para mayor claridad
-  - Documentación actualizada
-
-- **26/01/2026**: Implementación de módulo Perdidas y Ganancias (v3.3.0)
-  - 6 visualizaciones de rentabilidad
-  - Procesamiento de datos PYG con desacumulación
-  - Suma móvil de 12 meses para comparabilidad
-
-- **25/01/2026**: Implementación de gráficos de crecimiento anual por banco (v1.0)
-  - Barras horizontales ordenadas por crecimiento
-  - Comparación vs mismo mes año anterior
-  - Escala de colores RdYlGn
-  - Aplicado a Cartera de Créditos y Depósitos
-
-## 🔍 Referencias Técnicas
-
-### Bibliotecas Principales
-
-- **Streamlit**: Framework web - [Docs](https://docs.streamlit.io/)
-- **Plotly**: Gráficos interactivos - [Docs](https://plotly.com/python/)
-- **Pandas**: Manipulación de datos - [Docs](https://pandas.pydata.org/docs/)
-
-### Fuentes de Datos
-
-- **Superintendencia de Bancos del Ecuador**: https://www.superbancos.gob.ec/
-- **Portal Estadístico**: https://www.superbancos.gob.ec/estadisticas/portalestudios/
-
----
-
-**Última actualización**: 26 de enero de 2026
-**Versión**: 2.0
+1. Actualizar `AUTOMATIZACION.md` y `ARQUITECTURA.md`.
+2. Actualizar el diccionario si cambia un esquema o unidad.
+3. Añadir el procedimiento de recuperación correspondiente.
+4. Verificar todos los enlaces Markdown.
+5. Evitar cifras sin fecha de corte; preferir metadata o tablas marcadas como fotografía.

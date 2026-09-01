@@ -1,0 +1,15 @@
+# Dependencias para scraping y procesamiento de datos
+# Usadas por GitHub Actions para actualización automática
+
+# Scraping web
+selenium==4.45.0
+webdriver-manager==4.1.2
+requests==2.34.2
+
+# Procesamiento de datos
+pandas==2.3.0
+numpy==2.3.1
+pyarrow==23.0.0
+
+# Opcional: para exportar
+openpyxl==3.1.5

@@ -1,0 +1,12 @@
+.git
+.gitignore
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+.streamlit/secrets.toml
+descargas/
+datos_bancos*/
+archivos_info.json
+*.log
+docs/

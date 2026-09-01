@@ -1,0 +1,22 @@
+# Radar Bancario Ecuador - Dependencies
+
+# Core framework
+streamlit==1.53.1
+
+# Data manipulation
+pandas==2.3.0
+numpy==2.3.1
+
+# Data format support
+pyarrow==23.0.0
+
+# Visualization
+plotly>=5.14.0,<7.0.0
+kaleido
+
+# Reporting / export
+reportlab==5.0.1
+
+# Machine learning / forecasting (modulos de riesgo predictivo)
+scikit-learn==1.9.0
+statsmodels==0.15.0

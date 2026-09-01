@@ -6,7 +6,7 @@ Módulo especializado en el análisis de pérdidas y ganancias del sistema banca
 
 ## Estado: ✅ IMPLEMENTADO
 
-- **Archivo**: `pages/7_PYG_Rentabilidad.py`
+- **Archivo**: `archived_pages/7_PYG_Rentabilidad.py (no existe en repo)`
 - **Nombre**: "💰 Rentabilidad y Resultados"
 - **Posición**: Después del módulo Series Temporales
 - **Fecha de Implementación**: 26 de enero de 2026

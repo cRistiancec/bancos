@@ -6,7 +6,7 @@ Módulo especializado en análisis temporal del sistema bancario ecuatoriano con
 
 ## Estado: ✅ IMPLEMENTADO
 
-- **Archivo**: `pages/6_Series_Temporales.py`
+- **Archivo**: `archived_pages/6_Series_Temporales.py (no existe en repo)`
 - **Nombre**: "⏱️ Series Temporales"
 - **Posición**: Después del módulo Perfil
 - **Fecha de Implementación**: 25 de enero de 2026

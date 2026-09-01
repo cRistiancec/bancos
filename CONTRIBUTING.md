@@ -1,160 +1,97 @@
-# Guía de Contribución
+# Contribuir al Sistema Financiero Privado
 
-¡Gracias por tu interés en contribuir al proyecto Radar Bancario Ecuador! Este documento proporciona directrices para contribuir al proyecto.
+Gracias por mejorar el proyecto. Los cambios deben preservar la reproducibilidad del pipeline y la cobertura bancaria publicada.
 
-## Cómo Contribuir
+## Preparación
 
-### Reportar Bugs
-
-Si encuentras un bug, por favor abre un issue incluyendo:
-- Descripción clara del problema
-- Pasos para reproducirlo
-- Comportamiento esperado vs. comportamiento actual
-- Screenshots si es aplicable
-- Información del entorno (versión de Python, Streamlit, sistema operativo)
-
-### Sugerir Mejoras
-
-Para sugerir mejoras o nuevas funcionalidades:
-- Abre un issue describiendo la mejora propuesta
-- Explica el caso de uso y el valor que agregaría
-- Si es posible, proporciona ejemplos o mockups
-
-### Pull Requests
-
-1. **Fork el repositorio** y crea tu branch desde `main`
-2. **Naming**: Usa nombres descriptivos para tus branches (ej: `feature/exportar-excel`, `fix/calculo-morosidad`)
-3. **Código**:
-   - Sigue las convenciones de estilo de Python (PEP 8)
-   - Mantén la consistencia con el código existente
-   - Comenta el código donde sea necesario
-   - Actualiza la documentación si es relevante
-4. **Testing**:
-   - Prueba tus cambios localmente con `streamlit run Inicio.py`
-   - Verifica que no rompas funcionalidades existentes
-5. **Commits**:
-   - Usa mensajes de commit descriptivos en español
-   - Un commit por cambio lógico
-6. **Pull Request**:
-   - Describe claramente qué cambia y por qué
-   - Referencia issues relacionados
-   - Incluye screenshots si hay cambios visuales
-
-## Estructura del Código
-
-### Organización de Archivos
-
-- `Inicio.py`: Página principal, solo configuración y presentación
-- `pages/`: Módulos independientes de análisis
-- `utils/`: Funciones compartidas (carga de datos, validación)
-- `config/`: Configuraciones y mapeos estáticos
-
-### Convenciones de Código
-
-#### Nombres de Variables
-```python
-# Español para variables de negocio
-banco = "Pichincha"
-fecha_inicio = pd.Timestamp("2020-01-01")
-total_activos = 1000000
-
-# Inglés para variables técnicas está permitido
-df = pd.DataFrame()
-fig = go.Figure()
+```bash
+git clone <url-del-repositorio>
+cd bancos
+python -m venv .venv
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt -r requirements-scraping.txt
 ```
 
-#### Funciones
-```python
-def cargar_datos_balance():
-    """Carga y valida datos del balance general.
+Use una rama corta y descriptiva creada desde `main`.
 
-    Returns:
-        tuple: (DataFrame con datos, dict con métricas de calidad)
-    """
-    pass
+## Tipos de cambios
+
+### Interfaz
+
+- Mantenga `app.py` como entrypoint (`Inicio.py` no existe en esta versión).
+- Reutilice funciones de `services/`, `analytics/`, `charts/`, `components/` y mapeos de `config/indicator_mapping.py`.
+- Obtenga bancos y fechas desde los datos; no escriba cifras mensuales a mano.
+- Verifique la página afectada con datos reales y compruebe la consola del navegador.
+
+### Pipeline o datos
+
+- No publique un único Parquet sin los otros artefactos del mismo corte.
+- Conserve la semántica de exit code `2` como no-op.
+- Use escritura temporal y reemplazo atómico para artefactos.
+- Mantenga el rollback del orquestador y la puerta de `validar_actualizacion.py`.
+- Si cambia el número de bancos esperado, documente la evidencia oficial y actualice pruebas y configuración en el mismo cambio.
+
+### Documentación
+
+- Actualice primero los documentos autoritativos listados en `docs/README.md`.
+- Evite cifras sin fecha de corte.
+- Compruebe enlaces relativos y comandos desde la raíz del repositorio.
+
+## Validación obligatoria
+
+```bash
+python -m pytest tests/ -v
+python scripts/validar_actualizacion.py
+python -m py_compile app.py dashboard_metadata.py scripts/*.py
 ```
 
-#### Componentes de Streamlit
-```python
-# Usar cache cuando sea apropiado
-@st.cache_data
-def calcular_indicadores(df: pd.DataFrame) -> pd.DataFrame:
-    pass
+En Windows, si el shell no expande `scripts/*.py`, use:
 
-# Nomenclatura clara para widgets
-banco_seleccionado = st.selectbox(
-    "Seleccione un banco",
-    options=lista_bancos,
-    key="selector_banco_panorama"  # Keys descriptivos
-)
+```powershell
+Get-ChildItem scripts\*.py | ForEach-Object { python -m py_compile $_.FullName }
 ```
 
-### Estilo Visual
+Para cambios visuales:
 
-#### Colores
-Mantén consistencia con el tema azul:
-```python
-COLORES = {
-    'principal': '#2c5282',
-    'secundario': '#2b6cb0',
-    'oscuro': '#1a365d',
-    'texto_claro': '#718096',
-    'texto': '#4a5568'
-}
+```bash
+python -m streamlit run app.py
 ```
 
-#### Layout
-- Usa `st.columns()` para layouts responsivos
-- Mantén márgenes consistentes
-- Prioriza simplicidad sobre complejidad visual
+Revise Resumen Ejecutivo, Panorama Bancario, Balance General, Pérdidas y Ganancias e Indicadores CAMEL como mínimo.
 
-## Áreas de Contribución Prioritarias
+## Estilo
 
-### Alta Prioridad
-1. **Módulo de Calidad de Datos**: Dashboard de completitud y cobertura
-2. **Tests Unitarios**: Para funciones de `utils/`
-3. **Optimización de Performance**: Cache más granular, queries optimizadas
-4. **Documentación**: Comentarios en código, docstrings
+- Python legible y compatible con 3.11.
+- Variables de negocio en español son válidas; nombres técnicos pueden estar en inglés.
+- Use `observed=True` en `groupby` sobre columnas categóricas.
+- Evite convertir columnas categóricas masivas a `str` de forma indiscriminada.
+- Añada una prueba de regresión para cada fallo corregido.
+- Mantenga mensajes de commit breves y específicos.
 
-### Media Prioridad
-1. **Módulo de Perfil Individual**: Análisis por banco
-2. **Exportación**: Funcionalidad para exportar a Excel/PDF
-3. **Comparador Avanzado**: Gráfico radar, correlaciones
-4. **Responsividad**: Mejorar visualización en móviles
+## Pull request
 
-### Baja Prioridad
-1. **Análisis Predictivo**: Forecasting de indicadores
-2. **Alertas**: Sistema de notificaciones de eventos
-3. **API REST**: Endpoints para integración
+Incluya:
 
-## Directrices de Datos
+- problema y causa;
+- archivos y comportamiento modificados;
+- impacto en datos o interfaz;
+- comandos de validación ejecutados;
+- captura para cambios visuales;
+- plan de rollback si toca `master_data/` o automatización.
 
-### Códigos Contables
-- Usa siempre `config/indicator_mapping.py` para mapeos
-- No busques por texto, usa códigos fijos
-- Documenta nuevos códigos agregados
+No incluya ZIP, Excel, respaldos temporales ni carpetas locales ajenas al cambio.
 
-### Validación
-- Filtra valores nulos antes de visualizar
-- Valida jerarquías de cuentas
-- Maneja casos edge (bancos sin datos, fechas faltantes)
+## Reportar problemas
 
-### Performance
-- Usa `@st.cache_data` para operaciones costosas
-- Evita cargar datos completos si solo necesitas un subset
-- Optimiza groupby y merge operations
+Un issue útil contiene:
 
-## Código de Conducta
+- URL o módulo afectado;
+- banco, indicador y mes;
+- comportamiento observado y esperado;
+- pasos de reproducción;
+- enlace al run de Actions si es un incidente de actualización;
+- sistema operativo y versiones de Python/Streamlit para errores locales.
 
-- Sé respetuoso y constructivo
-- Acepta feedback con profesionalismo
-- Prioriza la calidad sobre la cantidad
-- Documenta decisiones técnicas importantes
+## Licencia y datos
 
-## Preguntas
-
-Si tienes preguntas sobre cómo contribuir, abre un issue con la etiqueta `question`.
-
----
-
-¡Gracias por contribuir al Radar Bancario Ecuador! 🇪🇨
+Al contribuir, acepta que su código se distribuya bajo la [licencia MIT](LICENSE). Los datos provienen de la Superintendencia de Bancos del Ecuador y deben conservar atribución y condiciones de origen.

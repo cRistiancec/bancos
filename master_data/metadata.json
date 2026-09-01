@@ -1,0 +1,36 @@
+{
+  "ultima_actualizacion": "2026-07-18T12:27:00.044622",
+  "bancos_procesados": [
+    "Amazonas",
+    "Atlantida",
+    "Austro",
+    "Bolivariano",
+    "Capital",
+    "Citibank",
+    "Codesarrollo",
+    "Comercial de Manabí",
+    "Coopnacional",
+    "DelBank",
+    "Diners",
+    "General Rumiñahui",
+    "Guayaquil",
+    "Internacional",
+    "Litoral",
+    "Loja",
+    "Machala",
+    "Pacifico",
+    "Pichincha",
+    "Procredit",
+    "Produbanco",
+    "Solidario",
+    "VisionFund"
+  ],
+  "bancos_error": [],
+  "total_bancos": 23,
+  "total_registros": 8152043,
+  "fecha_min": "2003-01-31 00:00:00",
+  "fecha_max": "2026-06-30 00:00:00",
+  "hojas_procesadas": [
+    "BAL"
+  ]
+}

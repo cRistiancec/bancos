@@ -57,4 +57,4 @@ Este documento define las visualizaciones y dashboards planificados para la apli
 - **Radar de Desempeño**: Gráfico de araña comparando al banco vs. el Promedio del Sistema en 5 ejes (Liquidez, Solvencia, Rentabilidad, Calidad Activos, Eficiencia).
 
 ---
-*Este documento es dinámico y se actualizará conforme se implementen nuevas métricas en `app.py`.*
+*Este documento es dinámico y se actualizará conforme se implementen nuevas métricas en `Inicio.py`.*
