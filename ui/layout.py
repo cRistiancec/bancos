@@ -8,7 +8,7 @@ Streamlit (equivalente a st.set_page_config, que debe ser lo primero).
 import streamlit as st
 
 from ui.theme import aplicar_tema
-from ui.header import render_header
+from ui.header import render_header, LOGO_PATH
 from ui.sidebar import render_sidebar_extra
 
 
@@ -19,6 +19,9 @@ def render_page(titulo: str, icono: str = "📊", layout: str = "wide", mostrar_
         layout=layout,
         initial_sidebar_state="expanded",
     )
+
+    if LOGO_PATH.exists():
+        st.logo(str(LOGO_PATH))
 
     aplicar_tema()
     render_sidebar_extra()

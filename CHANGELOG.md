@@ -6,6 +6,22 @@ Registro de cambios y mejoras de la plataforma.
 
 ## [Sin publicar]
 
+### Rebranding a DATA METRICS y preparación para Codespaces/Streamlit Cloud
+
+- **Logo institucional reemplazado**: `assets/logo_cosede.png` se elimina y
+  se incorpora `assets/logo-datametrics.png` (provisto por DATA METRICS —
+  Business Intelligence and Analytics), referenciado desde `ui/header.py` y
+  agregado también vía `st.logo()` en `ui/layout.py`.
+- **Atribución institucional actualizada**: todas las menciones a "COSEDE" /
+  "Coordinación Técnica de Riesgos y Estudios" en la interfaz en vivo
+  (header, `pages/configuracion.py`, pie de página de reportes PDF en
+  `utils/pdf_export.py`) y en la documentación (`README.md`, `QUICKSTART.md`,
+  `docs/`) se reemplazan por "DATA METRICS — Business Intelligence and
+  Analytics". No se modificó ningún cálculo, indicador ni lógica de negocio.
+- **Validado para GitHub Codespaces** (`.devcontainer/devcontainer.json`,
+  Python 3.11) y **Streamlit Community Cloud** (entry point `app.py`, sin
+  rutas absolutas ni secretos hardcodeados).
+
 ### Integración con la línea de automatización de datos (upstream)
 
 Reconciliación entre dos líneas de desarrollo divergentes construidas sobre
@@ -159,7 +175,7 @@ para el detalle metodológico completo de cada uno.
 ### Refactorización institucional (Fase 1)
 
 Transformación integral de "Radar Bancario Ecuador" en **Sistema Financiero
-Privado** — plataforma institucional para COSEDE. Ver
+Privado** — plataforma institucional de DATA METRICS. Ver
 `docs/AUDITORIA_COMPLETA.md` para el detalle completo del análisis previo y
 `docs/ARQUITECTURA.md` / `docs/ManualTecnico.md` para la arquitectura
 resultante. No se alteró ningún cálculo ni resultado existente (con una
@@ -167,8 +183,8 @@ excepción documentada y deliberadamente preservada: el bug de "Concentración
 Top 5" en Pérdidas y Ganancias, ver auditoría sección 5.1).
 
 **Rebranding**: nuevo nombre, subtítulo institucional y autoría (Eco.
-Cristian Coronel Quezada, MBA — Coordinación Técnica de Riesgos y Estudios,
-COSEDE).
+Cristian Coronel Quezada, MBA — DATA METRICS, Business Intelligence and
+Analytics).
 
 **Arquitectura**: nuevo entry point único `app.py` (`st.navigation`),
 reemplaza `Inicio.py` + `pages/N_*.py` numerados. Nuevas capas `ui/`,

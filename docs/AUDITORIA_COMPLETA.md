@@ -1,6 +1,6 @@
 # Auditoría Completa del Proyecto
 
-**Sistema Financiero Privado — COSEDE**
+**Sistema Financiero Privado — DATA METRICS**
 Auditoría previa a la refactorización institucional (Fase 1)
 Fecha de auditoría: 2026-07-27
 
@@ -217,4 +217,4 @@ columna `hoja` de la sección 5.
 - **Seguridad**: no hay uso de `eval`/`exec`/subprocess con input de usuario, ni SQL. El único punto de exportación a archivo (`exportar_reporte_calidad`) usa un buffer en memoria (`io.BytesIO`), no escribe a disco con rutas derivadas de input de usuario.
 - **Dependencias**: el entorno de ejecución de esta máquina tenía `numpy` ausente (paquete corrupto/incompleto) pese a que `pandas`/`scikit-learn`/`streamlit` sí estaban instalados — se reinstaló como parte de la verificación de esta auditoría; no es un problema del código del proyecto.
 - **UX**: los 3 selectores jerárquicos duplicados de `2_Balance_General.py` no solo son deuda técnica sino una inconsistencia de experiencia (comportamiento sutilmente distinto si se edita uno y no los otros dos).
-- **Branding actual**: el pie de página de `Inicio.py` y el `README.md` atribuyen el proyecto a "Juan Pablo Erráez T." — se reemplaza por la autoría institucional solicitada (Eco. Cristian Coronel Quezada, MBA — Coordinación Técnica de Riesgos y Estudios — COSEDE) en el marco de esta refactorización, sin alterar el historial de git.
+- **Branding actual**: el pie de página de `Inicio.py` y el `README.md` atribuyen el proyecto a "Juan Pablo Erráez T." — se reemplaza por la autoría institucional solicitada (Eco. Cristian Coronel Quezada, MBA — DATA METRICS, Business Intelligence and Analytics) en el marco de esta refactorización, sin alterar el historial de git.

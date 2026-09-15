@@ -53,7 +53,7 @@ def generar_reporte_ejecutivo_pdf(contexto: dict, metricas: dict, resumen_alerta
     elementos.append(Paragraph("SISTEMA FINANCIERO PRIVADO", estilos['TituloInstitucional']))
     elementos.append(Paragraph(
         "Sistema Inteligente para el Monitoreo Integral del Sistema Bancario Privado del Ecuador — "
-        "Coordinación Técnica de Riesgos y Estudios, COSEDE", estilos['Subtitulo']))
+        "DATA METRICS, Business Intelligence and Analytics", estilos['Subtitulo']))
     elementos.append(Paragraph(f"Reporte generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}", estilos['Normal']))
 
     fecha_corte = contexto.get('fecha_corte')

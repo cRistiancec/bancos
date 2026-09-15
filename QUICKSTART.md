@@ -190,4 +190,4 @@ real conectada — es intencional, no un error. Ver
 
 ---
 
-**Sistema Financiero Privado** — Eco. Cristian Coronel Quezada, MBA — Coordinación Técnica de Riesgos y Estudios, COSEDE
+**Sistema Financiero Privado** — Eco. Cristian Coronel Quezada, MBA — DATA METRICS, Business Intelligence and Analytics

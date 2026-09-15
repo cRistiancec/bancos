@@ -12,7 +12,7 @@ from services.data_service import obtener_contexto_sistema, cargar_camel
 from analytics.early_warning import generar_alertas, resumen_alertas
 from components.semaforo import render_badge_severidad
 
-LOGO_PATH = Path(__file__).parent.parent / "assets" / "logo_cosede.png"
+LOGO_PATH = Path(__file__).parent.parent / "assets" / "logo-datametrics.png"
 
 NOMBRE_SISTEMA = "SISTEMA FINANCIERO PRIVADO"
 SUBTITULO_SISTEMA = "Sistema Inteligente para el Monitoreo Integral del Sistema Bancario Privado del Ecuador"
@@ -51,12 +51,12 @@ def render_header():
 
     if LOGO_PATH.exists():
         logo_b64 = base64.b64encode(LOGO_PATH.read_bytes()).decode('utf-8')
-        logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height:38px;" />'
+        logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height:52px;" />'
     else:
         # No hay asset de marca en el repo: se usa un wordmark de texto como
-        # respaldo. Colocar el logo oficial en assets/logo_cosede.png lo
+        # respaldo. Colocar el logo oficial en assets/logo-datametrics.png lo
         # reemplaza automaticamente, sin cambios de codigo.
-        logo_html = '<div class="sfp-wordmark">COSEDE</div>'
+        logo_html = '<div class="sfp-wordmark">DATA METRICS</div>'
 
     st.markdown(f"""
         <div class="sfp-header">

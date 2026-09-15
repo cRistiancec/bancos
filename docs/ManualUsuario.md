@@ -1,7 +1,7 @@
 # Manual de Usuario — Sistema Financiero Privado
 
 Sistema Inteligente para el Monitoreo Integral del Sistema Bancario Privado del Ecuador
-COSEDE — Coordinación Técnica de Riesgos y Estudios
+DATA METRICS — Business Intelligence and Analytics
 
 ## Cómo ejecutar la plataforma
 

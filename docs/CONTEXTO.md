@@ -9,7 +9,7 @@ Si estas leyendo esto, **DEBES actualizar este archivo** con cualquier cambio re
 - Si se detectan errores cometidos previamente, registrarlos aqui.
 
 ## Resumen del proyecto (actual)
-- App Streamlit institucional ("Sistema Financiero Privado", COSEDE) para
+- App Streamlit institucional ("Sistema Financiero Privado", DATA METRICS) para
   analisis del sistema bancario ecuatoriano, evolucion de "Radar Bancario
   Ecuador" (autor original: Juan Pablo Erraez T., `jp1309/bancos`).
 - Entry point: `app.py` (`st.navigation`). **`Inicio.py` NO existe en esta

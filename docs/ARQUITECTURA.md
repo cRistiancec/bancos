@@ -133,7 +133,7 @@ bancos/
 │   ├── indicator_mapping.py        # codigos contables, indicadores CAMEL, colores, umbrales
 │   ├── theme_tokens.py             # paleta de colores institucional
 │   └── nav_registry.py             # registro de paginas para st.navigation
-├── assets/                    # logo_cosede.png + wordmark de respaldo
+├── assets/                    # logo-datametrics.png + wordmark de respaldo
 ├── styles/
 │   └── institutional.css           # refinamientos visuales sobre el tema nativo
 ├── master_data/                # balance.parquet, pyg.parquet, camel.parquet, metadata.json, update_status.json

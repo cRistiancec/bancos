@@ -5,7 +5,7 @@ Sistema Financiero Privado
 Sistema Inteligente para el Monitoreo Integral del Sistema Bancario Privado del Ecuador
 
 Autor institucional: Eco. Cristian Coronel Quezada, MBA
-Coordinación Técnica de Riesgos y Estudios — COSEDE
+Solución: DATA METRICS — Business Intelligence and Analytics
 
 Punto de entrada unico de la plataforma (reemplaza a Inicio.py + pages/N_*.py).
 Ejecutar con: streamlit run app.py

@@ -6,7 +6,7 @@ Plataforma institucional de inteligencia de riesgos construida sobre datos
 públicos de la Superintendencia de Bancos del Ecuador.
 
 **Autor institucional:** Eco. Cristian Coronel Quezada, MBA
-**Área:** Coordinación Técnica de Riesgos y Estudios — COSEDE
+**Solución de:** DATA METRICS — Business Intelligence and Analytics
 
 > Este proyecto es la evolución institucional de "Radar Bancario Ecuador"
 > (desarrollo original: Juan Pablo Erráez T., [jp1309/bancos](https://github.com/jp1309/bancos),
