@@ -1,4 +1,6 @@
 # Radar Bancario Ecuador - Dependencies
-# Diagnostico minimo - solo streamlit para verificar entorno
-
 streamlit==1.53.1
+plotly
+reportlab
+scikit-learn
+statsmodels
