@@ -15,6 +15,7 @@ import sys
 import os
 import re
 import calendar
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -35,6 +36,7 @@ if sys.platform == 'win32':
 
 # Importar librerías necesarias
 try:
+    import certifi
     import requests
     from selenium import webdriver
     from selenium.webdriver.common.by import By
@@ -52,6 +54,27 @@ except ImportError as e:
     print("\nInstala las dependencias con:")
     print("  pip install selenium beautifulsoup4 requests webdriver-manager")
     sys.exit(1)
+
+
+def _bundle_ca_con_intermedio_faltante() -> str:
+    """Ruta a un bundle CA = certifi + el intermedio que superbancos.gob.ec no envia.
+
+    El servidor no manda su certificado intermedio en el handshake TLS
+    (confirmado con `openssl s_client -showcerts`: solo llega la hoja,
+    "Verify return code: 21"). Los navegadores lo toleran vía AIA chasing;
+    requests/urllib3 no, y esto rompe TODAS las descargas con
+    HTTPSConnectionPool. Se agrega el intermedio (scripts/certs/) al bundle
+    de certifi en vez de desactivar verify -- ver scripts/certs/README.md.
+    """
+    intermedio = Path(__file__).parent / "certs" / "sectigo_public_server_auth_ca_ov_r36.pem"
+    if not intermedio.exists():
+        return certifi.where()
+
+    bundle_combinado = Path(tempfile.gettempdir()) / "bancos_ca_bundle.pem"
+    contenido = Path(certifi.where()).read_bytes() + b"\n" + intermedio.read_bytes()
+    if not bundle_combinado.exists() or bundle_combinado.read_bytes() != contenido:
+        bundle_combinado.write_bytes(contenido)
+    return str(bundle_combinado)
 
 def main():
     """Función principal del descargador"""
@@ -297,6 +320,7 @@ def main():
         print(f"{'='*80}\n")
 
         session = requests.Session()
+        session.verify = _bundle_ca_con_intermedio_faltante()
         session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
@@ -333,7 +357,7 @@ def main():
                 exitosos += 1
 
             except Exception as e:
-                print(f"✗ {str(e)[:30]}")
+                print(f"✗ {str(e)[:150]}")
                 if filepath_temporal and os.path.exists(filepath_temporal):
                     os.remove(filepath_temporal)
                 fallidos += 1
@@ -402,7 +426,7 @@ def main():
                     descomprimidos += 1
 
                 except Exception as e:
-                    print(f"✗ {str(e)[:30]}")
+                    print(f"✗ {str(e)[:150]}")
                     errores_zip += 1
 
             print(f"\n{'='*80}")
