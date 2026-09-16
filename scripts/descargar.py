@@ -50,8 +50,6 @@ except ImportError as e:
     print("  pip install selenium requests")
     sys.exit(1)
 
-
-
 def _crear_bundle_ssl():
     """Combina el bundle de certifi con el certificado Sectigo intermedio.
 
@@ -71,7 +69,6 @@ def _crear_bundle_ssl():
     tmp.write(certifi_data + b'\n' + sectigo_data)
     tmp.close()
     return tmp.name
-
 
 def main():
     """Funcion principal del descargador"""
@@ -268,76 +265,128 @@ def main():
         for idx, f in enumerate(archivos_encontrados, 1):
             print(f"{idx:3}. {f['nombre'][:70]}")
 
-        if len(archivos_encontrados) != config.NUMERO_ESPERADO_BANCOS:
+        # Detectar si el portal cambio a formato consolidado (un ZIP con todos los bancos)
+        es_consolidado = (
+            len(archivos_encontrados) == 1
+            and any('total' in a['nombre'].lower() for a in archivos_encontrados)
+        )
+
+        if not es_consolidado and len(archivos_encontrados) != config.NUMERO_ESPERADO_BANCOS:
             raise RuntimeError(f"Se esperaban {config.NUMERO_ESPERADO_BANCOS} bancos, encontrados {len(archivos_encontrados)}")
 
-        print(f"\nDESCARGANDO {len(archivos_encontrados)} ARCHIVOS...")
+        if es_consolidado:
+            print(f"  Modo: ZIP CONSOLIDADO (todos los bancos en un archivo)")
+        else:
+            print(f"  Modo: ZIPs individuales por banco")
+
         session = requests.Session()
         session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
         session.verify = _crear_bundle_ssl()
 
-        exitosos = 0
-        fallidos = 0
-
-        for idx, archivo in enumerate(archivos_encontrados, 1):
-            filepath_temporal = None
-            try:
-                nombre_corto = archivo['nombre'][:45]
-                print(f"[{idx:3}/{len(archivos_encontrados)}] {nombre_corto:45} ... ", end='', flush=True)
-                response = session.get(archivo['url'], stream=True, timeout=config.TIMEOUT_DESCARGA)
-                response.raise_for_status()
-                filename = archivo['nombre']
-                if not filename.endswith('.zip'):
-                    filename += '.zip'
-                filepath = os.path.join(download_dir, filename)
-                filepath_temporal = f"{filepath}.part"
-                with open(filepath_temporal, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=config.CHUNK_SIZE):
-                        if chunk:
-                            f.write(chunk)
-                validar_zip(Path(filepath_temporal))
-                os.replace(filepath_temporal, filepath)
-                size_mb = os.path.getsize(filepath) / (1024 * 1024)
-                print(f"OK ({size_mb:5.2f} MB)")
-                exitosos += 1
-            except Exception as e:
-                print(f"FALLO {str(e)[:30]}")
-                if filepath_temporal and os.path.exists(filepath_temporal):
-                    os.remove(filepath_temporal)
-                fallidos += 1
-
-        if exitosos != len(archivos_encontrados):
-            raise RuntimeError(f"{fallidos} archivo(s) fallaron durante la descarga")
-
-        print(f"\nDESCOMPRIMIENDO ARCHIVOS ZIP...")
         extracted_dir = os.path.join(download_dir, 'archivos_excel')
         os.makedirs(extracted_dir, exist_ok=True)
-        archivos_zip = [f for f in os.listdir(download_dir) if f.endswith('.zip')]
-        descomprimidos = 0
-        errores_zip = 0
 
-        for idx, zip_filename in enumerate(archivos_zip, 1):
-            try:
-                zip_path = os.path.join(download_dir, zip_filename)
-                validar_zip(Path(zip_path))
-                banco_name = re.sub(r'^Series\s*Banco\s*', '', zip_filename.replace('.zip', ''), flags=re.IGNORECASE)
-                print(f"[{idx:3}/{len(archivos_zip)}] {banco_name[:45]:45} ... ", end='', flush=True)
-                banco_dir = os.path.join(extracted_dir, banco_name)
-                os.makedirs(banco_dir, exist_ok=True)
-                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                    zip_ref.extractall(banco_dir)
-                files = os.listdir(banco_dir)
-                excel_files = [f for f in files if f.endswith(('.xlsx', '.xls'))]
-                for excel_file in excel_files:
-                    old_path = os.path.join(banco_dir, excel_file)
-                    new_path = os.path.join(banco_dir, f"{banco_name}.xlsx")
-                    if old_path != new_path:
-                        os.rename(old_path, new_path)
-                print(f"OK ({len(excel_files)} Excel)")
-                descomprimidos += 1
-            except Exception as e:
-                print(f"FALLO {str(e)[:30]}")
-                errores_zip += 1
+        if es_consolidado:
+            # Formato nuevo: un solo ZIP con todos los bancos
+            archivo = archivos_encontrados[0]
+            print(f"\nDESCARGANDO ZIP CONSOLIDADO: {archivo['nombre'][:60]}")
+            response = session.get(archivo['url'], stream=True, timeout=config.TIMEOUT_DESCARGA * 3)
+            response.raise_for_status()
+            filename = archivo['nombre']
+            if not filename.endswith('.zip'):
+                filename += '.zip'
+            filepath = os.path.join(download_dir, filename)
+            with open(filepath, 'wb') as f_out:
+                for chunk in response.iter_content(chunk_size=config.CHUNK_SIZE):
+                    if chunk:
+                        f_out.write(chunk)
+            size_mb = os.path.getsize(filepath) / (1024 * 1024)
+            print(f"  Descargado: {size_mb:.2f} MB")
+
+            print(f"\nDESCOMPRIMIENDO ZIP CONSOLIDADO...")
+            with zipfile.ZipFile(filepath, 'r') as zip_ref:
+                nombres_internos = [info.filename for info in zip_ref.infolist() if not info.is_dir()]
+                xlsx_internos = [n for n in nombres_internos if n.lower().endswith('.xlsx')]
+                print(f"  Encontrados {len(xlsx_internos)} archivos Excel en el ZIP")
+
+                for xlsx_nombre in xlsx_internos:
+                    xlsx_basename = Path(xlsx_nombre).name
+                    banco_carpeta = re.sub(
+                        r'^Series\s*Banco\s*', '',
+                        xlsx_basename.replace('.xlsx', '').replace('.XLSX', ''),
+                        flags=re.IGNORECASE
+                    )
+                    banco_dir = os.path.join(extracted_dir, banco_carpeta)
+                    os.makedirs(banco_dir, exist_ok=True)
+                    with zip_ref.open(xlsx_nombre) as src:
+                        target_path = os.path.join(banco_dir, f"{banco_carpeta}.xlsx")
+                        with open(target_path, 'wb') as dst:
+                            dst.write(src.read())
+                    print(f"  [OK] {banco_carpeta}")
+
+        else:
+            # Formato antiguo: un ZIP por banco
+            print(f"\nDESCARGANDO {len(archivos_encontrados)} ARCHIVOS...")
+            exitosos = 0
+            fallidos = 0
+
+            for idx, archivo in enumerate(archivos_encontrados, 1):
+                filepath_temporal = None
+                try:
+                    nombre_corto = archivo['nombre'][:45]
+                    print(f"[{idx:3}/{len(archivos_encontrados)}] {nombre_corto:45} ... ", end='', flush=True)
+                    response = session.get(archivo['url'], stream=True, timeout=config.TIMEOUT_DESCARGA)
+                    response.raise_for_status()
+                    filename = archivo['nombre']
+                    if not filename.endswith('.zip'):
+                        filename += '.zip'
+                    filepath = os.path.join(download_dir, filename)
+                    filepath_temporal = f"{filepath}.part"
+                    with open(filepath_temporal, 'wb') as f:
+                        for chunk in response.iter_content(chunk_size=config.CHUNK_SIZE):
+                            if chunk:
+                                f.write(chunk)
+                    validar_zip(Path(filepath_temporal))
+                    os.replace(filepath_temporal, filepath)
+                    size_mb = os.path.getsize(filepath) / (1024 * 1024)
+                    print(f"OK ({size_mb:5.2f} MB)")
+                    exitosos += 1
+                except Exception as e:
+                    print(f"FALLO {str(e)[:30]}")
+                    if filepath_temporal and os.path.exists(filepath_temporal):
+                        os.remove(filepath_temporal)
+                    fallidos += 1
+
+            if exitosos != len(archivos_encontrados):
+                raise RuntimeError(f"{fallidos} archivo(s) fallaron durante la descarga")
+
+            print(f"\nDESCOMPRIMIENDO ARCHIVOS ZIP...")
+            archivos_zip = [f for f in os.listdir(download_dir) if f.endswith('.zip')]
+            descomprimidos = 0
+            errores_zip = 0
+
+            for idx, zip_filename in enumerate(archivos_zip, 1):
+                try:
+                    zip_path = os.path.join(download_dir, zip_filename)
+                    validar_zip(Path(zip_path))
+                    banco_name = re.sub(r'^Series\s*Banco\s*', '', zip_filename.replace('.zip', ''), flags=re.IGNORECASE)
+                    print(f"[{idx:3}/{len(archivos_zip)}] {banco_name[:45]:45} ... ", end='', flush=True)
+                    banco_dir = os.path.join(extracted_dir, banco_name)
+                    os.makedirs(banco_dir, exist_ok=True)
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        zip_ref.extractall(banco_dir)
+                    files = os.listdir(banco_dir)
+                    excel_files = [f for f in files if f.endswith(('.xlsx', '.xls'))]
+                    for excel_file in excel_files:
+                        old_path = os.path.join(banco_dir, excel_file)
+                        new_path = os.path.join(banco_dir, f"{banco_name}.xlsx")
+                        if old_path != new_path:
+                            os.rename(old_path, new_path)
+                    print(f"OK ({len(excel_files)} Excel)")
+                    descomprimidos += 1
+                except Exception as e:
+                    print(f"FALLO {str(e)[:30]}")
+                    errores_zip += 1
 
         fecha_esperada = datetime(
             config.ANO_OBJETIVO,
@@ -386,7 +435,6 @@ def main():
         if not config.CHROME_HEADLESS:
             time.sleep(10)
         driver.quit()
-
 
 if __name__ == "__main__":
     main()
