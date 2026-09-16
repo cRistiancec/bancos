@@ -11,8 +11,8 @@ numpy==2.3.1
 pyarrow==23.0.0
 
 # Visualization
-plotly>=5.14.0,<7.0.0
-kaleido
+plotly==5.24.1
+kaleido==0.2.1
 
 # Reporting / export
 reportlab==5.0.1
