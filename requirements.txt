@@ -1,21 +1,4 @@
 # Radar Bancario Ecuador - Dependencies
+# Diagnostico minimo - solo streamlit para verificar entorno
 
-# Core framework
 streamlit==1.53.1
-
-# Data manipulation
-pandas==2.3.0
-numpy==2.3.1
-
-# Data format support
-pyarrow==23.0.0
-
-# Visualization
-plotly==5.24.1
-
-# Reporting / export
-reportlab==5.0.1
-
-# Machine learning / forecasting (modulos de riesgo predictivo)
-scikit-learn==1.9.0
-statsmodels==0.15.0
