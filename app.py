@@ -2,16 +2,18 @@
 # -*- coding: utf-8 -*-
 """
 Sistema Financiero Privado
-Sistema Inteligente para el Monitoreo Integral del Sistema Bancario Privado del Ecuador
-
-Autor institucional: Eco. Cristian Coronel Quezada, MBA
-Solución: DATA METRICS — Business Intelligence and Analytics
-
-Punto de entrada unico de la plataforma (reemplaza a Inicio.py + pages/N_*.py).
-Ejecutar con: streamlit run app.py
+Punto de entrada con diagnostico de errores de inicio.
 """
 
-from config.nav_registry import construir_navegacion
+import streamlit as st
+import traceback
 
-pagina_actual = construir_navegacion()
-pagina_actual.run()
+try:
+    from config.nav_registry import construir_navegacion
+    pagina_actual = construir_navegacion()
+    pagina_actual.run()
+except Exception as e:
+    st.error(f"**ERROR DE INICIO: {type(e).__name__}**")
+    st.error(str(e))
+    st.code(traceback.format_exc(), language="python")
+    st.warning("Revisa los logs de la app para mas detalles.")
