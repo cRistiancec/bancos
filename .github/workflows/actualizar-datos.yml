@@ -1,5 +1,6 @@
 name: Actualizar Datos Bancarios
 
+
 on:
   # Se reintenta a diario del 10 al 20 de cada mes (ventana en la que la
   # Superintendencia publica el boletin del mes anterior, segun
@@ -9,20 +10,25 @@ on:
   # recuperarse de una falla transitoria de la fuente (ej. certificado TLS
   # incompleto del portal, visto del 2026-09-08 al 2026-09-16).
   schedule:
-    - cron: '0 13 10-20 * *'
+    - cron: '0 13 15,18 * *'→ Runs at 13:00, between day 10 and 20 of the month
+
   workflow_dispatch:
+
 
 permissions:
   contents: write
+
 
 jobs:
   actualizar-datos:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
+
     steps:
       - name: Checkout codigo
         uses: actions/checkout@v4
+
 
       - name: Configurar Python 3.11
         uses: actions/setup-python@v5
@@ -30,94 +36,8 @@ jobs:
           python-version: '3.11'
           cache: pip
 
+
       - name: Instalar Chrome
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
-
-      - name: Instalar dependencias
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-scraping.txt
-
-      - name: Verificar fecha real publicada
-        id: check-update
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import sys
-
-          sys.path.insert(0, 'scripts')
-          import config
-          from validar_actualizacion import validar_actualizacion
-
-          try:
-              validar_actualizacion(bancos_esperados=config.NUMERO_ESPERADO_BANCOS)
-              actualizada = True
-              print('Los tres datasets superan la puerta de calidad')
-          except Exception as exc:
-              actualizada = False
-              print(exc)
-          print(f'Periodo objetivo: {config.PERIODO_DESCARGA}')
-          Path('check_result.txt').write_text(
-              'false' if actualizada else 'true', encoding='ascii'
-          )
-          PY
-          echo "necesita_actualizar=$(cat check_result.txt)" >> "$GITHUB_OUTPUT"
-
-      - name: Descargar, procesar y validar
-        if: steps.check-update.outputs.necesita_actualizar == 'true'
-        id: actualizar
-        shell: bash
-        run: |
-          set +e
-          python scripts/actualizar_datos.py
-          EXIT_CODE=$?
-          set -e
-
-          if [ "$EXIT_CODE" -eq 0 ]; then
-            echo "datos_nuevos=true" >> "$GITHUB_OUTPUT"
-          elif [ "$EXIT_CODE" -eq 2 ]; then
-            echo "datos_nuevos=false" >> "$GITHUB_OUTPUT"
-            echo "La fuente todavia no contiene el mes objetivo. Nada que publicar."
-          else
-            echo "La actualizacion fallo con codigo ${EXIT_CODE}."
-            exit "$EXIT_CODE"
-          fi
-
-      - name: Validar artefactos antes de publicar
-        if: steps.actualizar.outputs.datos_nuevos == 'true'
-        run: python scripts/validar_actualizacion.py
-
-      - name: Mostrar archivos generados
-        if: steps.actualizar.outputs.datos_nuevos == 'true'
-        run: ls -lh master_data/*.parquet master_data/*.json
-
-      - name: Commit y push
-        if: steps.actualizar.outputs.datos_nuevos == 'true'
-        shell: bash
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add \
-            master_data/balance.parquet \
-            master_data/pyg.parquet \
-            master_data/camel.parquet \
-            master_data/metadata.json \
-            master_data/update_status.json
-
-          if git diff --staged --quiet; then
-            echo "No hay cambios para publicar"
-            exit 0
-          fi
-
-          periodo=$(python -c "import json; print(json.load(open('master_data/update_status.json'))['ultimo_periodo_descargado'])")
-          git commit -m "Actualizacion automatica: datos de ${periodo}"
-          git push
-
-      - name: Resumen
-        if: always()
-        run: |
-          echo "Necesitaba actualizar: ${{ steps.check-update.outputs.necesita_actualizar }}"
-          echo "Datos nuevos: ${{ steps.actualizar.outputs.datos_nuevos }}"
