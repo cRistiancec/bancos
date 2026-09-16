@@ -33,6 +33,8 @@ if sys.platform == 'win32':
 
 try:
     import requests
+    import certifi
+    import tempfile
     from selenium import webdriver
     from selenium.webdriver.common.by import By
     from selenium.webdriver.chrome.options import Options
@@ -47,6 +49,28 @@ except ImportError as e:
     print("\nInstala las dependencias con:")
     print("  pip install selenium requests")
     sys.exit(1)
+
+
+
+def _crear_bundle_ssl():
+    """Combina el bundle de certifi con el certificado Sectigo intermedio.
+
+    superbancos.gob.ec no envia el certificado intermedio en el handshake TLS
+    (solo devuelve el certificado hoja, verify return code 21). Los navegadores
+    lo descargan via AIA; requests/urllib3 no lo hacen.
+    """
+    dir_certs = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'certs')
+    sectigo_pem = os.path.join(dir_certs, 'sectigo_public_server_auth_ca_ov_r36.pem')
+    if not os.path.isfile(sectigo_pem):
+        return certifi.where()
+    with open(certifi.where(), 'rb') as f:
+        certifi_data = f.read()
+    with open(sectigo_pem, 'rb') as f:
+        sectigo_data = f.read()
+    tmp = tempfile.NamedTemporaryFile(suffix='.pem', delete=False)
+    tmp.write(certifi_data + b'\n' + sectigo_data)
+    tmp.close()
+    return tmp.name
 
 
 def main():
@@ -250,6 +274,7 @@ def main():
         print(f"\nDESCARGANDO {len(archivos_encontrados)} ARCHIVOS...")
         session = requests.Session()
         session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
+        session.verify = _crear_bundle_ssl()
 
         exitosos = 0
         fallidos = 0
