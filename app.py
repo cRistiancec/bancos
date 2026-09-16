@@ -1,35 +1,41 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Diagnostico de entorno - Sistema Financiero Privado"""
+"""Diagnostico minimo - Sistema Financiero Privado"""
 
 import streamlit as st
-import subprocess
 import sys
-import importlib
 
 st.title("Diagnostico de Entorno")
 
 # Python version
-st.subheader("Python")
-st.code(f"Python {sys.version}\nEjecutable: {sys.executable}")
+st.write(f"Python: {sys.version}")
+st.write(f"Ejecutable: {sys.executable}")
 
-# Check packages
+# Check packages with importlib
+import importlib
+
+packages = [
+    'streamlit', 'plotly', 'pandas', 'numpy', 
+    'pyarrow', 'reportlab', 'sklearn', 'statsmodels'
+]
+
 st.subheader("Estado de Paquetes")
-packages = ['plotly', 'pandas', 'numpy', 'pyarrow', 'reportlab', 'sklearn', 'statsmodels', 'streamlit']
+results = []
 for pkg in packages:
     try:
         m = importlib.import_module(pkg)
-        version = getattr(m, '__version__', 'unknown')
-        st.success(f"OK {pkg}: {version}")
+        version = getattr(m, '__version__', 'ok')
+        results.append(f"OK  {pkg}: {version}")
     except ImportError as e:
-        st.error(f"FALTA {pkg}: {e}")
+        results.append(f"FALTA {pkg}: {e}")
 
-# pip list
-st.subheader("pip list completo")
-result = subprocess.run([sys.executable, '-m', 'pip', 'list'], capture_output=True, text=True)
-st.code(result.stdout or result.stderr)
+st.code("\n".join(results))
 
-# uv list
-st.subheader("uv pip list")
-result2 = subprocess.run(['uv', 'pip', 'list'], capture_output=True, text=True)
-st.code(result2.stdout or result2.stderr or "uv not found")
+# pip list via importlib.metadata
+st.subheader("Paquetes instalados (importlib.metadata)")
+try:
+    import importlib.metadata as meta
+    pkgs = sorted([(d.name, d.version) for d in meta.distributions()])
+    st.code("\n".join(f"{n}: {v}" for n, v in pkgs))
+except Exception as e:
+    st.error(f"Error: {e}")
