@@ -4,8 +4,7 @@ Funciones de validacion y analisis de calidad de datos.
 """
 
 import pandas as pd
-import numpy as np
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Any
 import streamlit as st
 
 # Importar configuracion
@@ -13,11 +12,7 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from config.indicator_mapping import (
-    CODIGOS_BALANCE,
-    BANCOS_SISTEMA,
-    RANGOS_INDICADORES,
-)
+from config.indicator_mapping import BANCOS_SISTEMA
 
 
 @st.cache_data

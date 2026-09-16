@@ -14,7 +14,7 @@ from ui.layout import render_page
 from services.data_service import cargar_camel, obtener_fechas_disponibles
 from analytics.stress_testing import ESCENARIOS, aplicar_escenario, resumen_escenario
 from components.semaforo import render_badge_severidad
-from config.theme_tokens import COLORES, COLOR_SEVERIDAD
+from config.theme_tokens import COLORES
 
 render_page("Stress Testing", icono="🧪")
 

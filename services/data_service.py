@@ -46,7 +46,18 @@ def _mascara_texto_valido(serie: pd.Series) -> pd.Series:
     "Cannot setitem on a Categorical with a new category" en cuanto la
     cadena vacia no es ya una categoria existente. Se evita el fillna por
     completo: NaN se trata directamente como invalido.
+
+    Para columnas categoricas se evalua sobre `cat.categories` (unas pocas
+    decenas/cientos de valores) y se usa `isin`, no `astype(str)` sobre la
+    serie completa: con pandas 2.3.0/numpy 2.3.1, `astype(str)` en una
+    Categorical de mas de ~5 millones de filas (balance.parquet tiene 8.1M)
+    degrada de forma abrupta y no llega a terminar en un tiempo razonable.
     """
+    if isinstance(serie.dtype, pd.CategoricalDtype):
+        categorias_validas = {
+            c for c in serie.cat.categories if isinstance(c, str) and c.strip() != ''
+        }
+        return serie.isin(categorias_validas)
     return serie.notna() & (serie.astype(str).str.strip() != '')
 
 

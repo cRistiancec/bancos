@@ -15,7 +15,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from ui.layout import render_page
-from services.data_service import cargar_balance, obtener_fechas_disponibles
+from services.data_service import cargar_balance
 from components.account_selector import construir_jerarquia_cuentas, seleccionar_cuenta_jerarquica
 from components.mode_selector import render_selector_modo, calcular_serie_modo
 from charts.builders import crear_ranking_barras

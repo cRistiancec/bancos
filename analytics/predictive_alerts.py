@@ -15,7 +15,7 @@ de Forecasting.
 import pandas as pd
 import streamlit as st
 
-from analytics.camel_scoring import obtener_valor_indicador, clasificar_semaforo, CODIGO_A_TIPO_RANGO
+from analytics.camel_scoring import clasificar_semaforo, CODIGO_A_TIPO_RANGO
 from analytics.camel_explorer import obtener_evolucion, serie_promedio_sistema
 from analytics.stress_testing import ORDEN_SEVERIDAD
 from models.forecasting import proyectar_serie, SerieInsuficiente

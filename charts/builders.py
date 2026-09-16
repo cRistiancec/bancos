@@ -12,7 +12,7 @@ ejecutivos con mini-tendencia).
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict
 
 from config.indicator_mapping import obtener_color_banco
 from config.theme_tokens import COLORES

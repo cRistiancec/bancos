@@ -9,7 +9,6 @@ General y Perdidas y Ganancias.
 """
 
 import streamlit as st
-import pandas as pd
 import plotly.graph_objects as go
 
 from ui.layout import render_page

@@ -14,7 +14,6 @@ from ui.layout import render_page
 from services.data_service import cargar_camel, obtener_fechas_disponibles
 from analytics.camel_scoring import obtener_valor_indicador, clasificar_semaforo, CODIGO_A_TIPO_RANGO
 from config.indicator_mapping import ETIQUETAS_INDICADORES
-from components.semaforo import render_badge_severidad
 
 render_page("Monitoreo Prudencial", icono="🛡️")
 

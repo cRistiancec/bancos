@@ -12,7 +12,7 @@ import streamlit as st
 
 from ui.layout import render_page, render_modulo_en_preparacion
 from services.data_service import cargar_camel, obtener_fechas_disponibles
-from analytics.camel_explorer import obtener_ranking, serie_promedio_sistema
+from analytics.camel_explorer import serie_promedio_sistema
 from components.indicator_panel import render_panel_indicador
 
 render_page("Riesgo de Crédito", icono="💳")
