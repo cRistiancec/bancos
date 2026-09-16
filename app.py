@@ -1,41 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Diagnostico minimo - Sistema Financiero Privado"""
+"""
+Sistema Financiero Privado
+Punto de entrada con diagnostico de errores de inicio.
+"""
 
 import streamlit as st
-import sys
+import traceback
 
-st.title("Diagnostico de Entorno")
-
-# Python version
-st.write(f"Python: {sys.version}")
-st.write(f"Ejecutable: {sys.executable}")
-
-# Check packages with importlib
-import importlib
-
-packages = [
-    'streamlit', 'plotly', 'pandas', 'numpy', 
-    'pyarrow', 'reportlab', 'sklearn', 'statsmodels'
-]
-
-st.subheader("Estado de Paquetes")
-results = []
-for pkg in packages:
-    try:
-        m = importlib.import_module(pkg)
-        version = getattr(m, '__version__', 'ok')
-        results.append(f"OK  {pkg}: {version}")
-    except ImportError as e:
-        results.append(f"FALTA {pkg}: {e}")
-
-st.code("\n".join(results))
-
-# pip list via importlib.metadata
-st.subheader("Paquetes instalados (importlib.metadata)")
 try:
-    import importlib.metadata as meta
-    pkgs = sorted([(d.name, d.version) for d in meta.distributions()])
-    st.code("\n".join(f"{n}: {v}" for n, v in pkgs))
+    from config.nav_registry import construir_navegacion
+    pagina_actual = construir_navegacion()
+    pagina_actual.run()
 except Exception as e:
-    st.error(f"Error: {e}")
+    st.error(f"**ERROR DE INICIO: {type(e).__name__}**")
+    st.error(str(e))
+    st.code(traceback.format_exc(), language="python")
+    st.warning("Revisa los logs de la app para mas detalles.")
