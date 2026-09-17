@@ -56,7 +56,7 @@ def render_header():
         # No hay asset de marca en el repo: se usa un wordmark de texto como
         # respaldo. Colocar el logo oficial en assets/logo-datametrics.png lo
         # reemplaza automaticamente, sin cambios de codigo.
-        logo_html = '<div class="sfp-wordmark">DATA METRICS</div>'
+        logo_html = '<div class="sfp-wordmark">DATAMETRICS</div>'
 
     st.markdown(f"""
         <div class="sfp-header">
