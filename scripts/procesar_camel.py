@@ -5,7 +5,7 @@ Procesamiento de hoja CAMEL de archivos Excel de la Superintendencia de Bancos.
 Estructura de la hoja CAMEL:
 - Fila 5: Fechas (columna D en adelante)
 - Filas 6-54: Indicadores CAMEL
-- Columna B o C: Nombre del indicador (varía según fila)
+- Columna B o C: Nombre del indicador (varia segun fila)
 
 Este script genera: master_data/camel.parquet
 """
@@ -13,6 +13,7 @@ Este script genera: master_data/camel.parquet
 import pandas as pd
 import numpy as np
 import re
+import unicodedata
 from pathlib import Path
 from datetime import datetime
 import sys
@@ -42,7 +43,7 @@ INDICADORES_CAMEL = {
     10: ('CAR_ACT', 'Cartera Total / Activo Total', 'B', 'A - Activos'),
     11: ('INV_ACT', 'Inversiones / Total Activo', 'B', 'A - Activos'),
 
-    # Filas 12-19: Participación de crédito (columna C) - Para treemap
+    # Filas 12-19: Participacion de credito (columna C) - Para treemap
     12: ('PART_INMOB_VIP', 'Participacion Credito Inmobiliario y Vivienda Interes Publico', 'C', 'Composicion Cartera'),
     13: ('PART_PROD', 'Participacion Credito Productivo Nuevo', 'C', 'Composicion Cartera'),
     14: ('PART_CONS', 'Participacion Credito de Consumo', 'C', 'Composicion Cartera'),
@@ -93,7 +94,7 @@ INDICADORES_CAMEL = {
 
 
 def extraer_nombre_banco(ruta_archivo: Path) -> str:
-    """Extrae el nombre del banco de la ruta del archivo, quitando el sufijo MES AÑO."""
+    """Extrae el nombre del banco de la ruta del archivo, quitando el sufijo MES ANNO."""
     nombre_carpeta = ruta_archivo.parent.name
     nombre = re.sub(
         r'\s+(ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)\s+\d{4}$',
@@ -116,7 +117,7 @@ def procesar_archivo_camel(ruta_archivo: Path) -> pd.DataFrame:
         # Leer hoja CAMEL sin headers
         df_excel = pd.read_excel(ruta_archivo, sheet_name='CAMEL', header=None)
 
-        banco = extraer_nombre_banco(ruta_archivo)
+        banco = unicodedata.normalize('NFC', extraer_nombre_banco(ruta_archivo))
 
         # Obtener fechas de la fila 5 (indice 4), columna D en adelante (indice 3)
         fechas_row = df_excel.iloc[4, 3:]
@@ -203,7 +204,7 @@ def main():
     archivos_error = []
 
     for i, archivo in enumerate(archivos, 1):
-        banco = extraer_nombre_banco(archivo)
+        banco = unicodedata.normalize('NFC', extraer_nombre_banco(archivo))
         print(f"\n[{i}/{len(archivos)}] Procesando: {banco}")
 
         df = procesar_archivo_camel(archivo)
