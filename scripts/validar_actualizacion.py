@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import calendar
 import json
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 import sys
@@ -48,7 +49,7 @@ def fecha_objetivo_config() -> pd.Timestamp:
 
 
 def _serializar_bancos(valores) -> list[str]:
-    return sorted(str(valor) for valor in valores)
+    return sorted(unicodedata.normalize('NFC', str(valor)) for valor in valores)
 
 
 def capturar_estado() -> dict:
@@ -124,6 +125,8 @@ def validar_actualizacion(
 
         fecha_min = fechas.min()
         fecha_max = fechas.max()
+        # DIAGNOSTICO: mostrar fechas para detectar desfase de periodo
+        print(f"  [{nombre}] fecha_min={fecha_min.date()} fecha_max={fecha_max.date()} fecha_esperada={fecha_esperada.date()} dtype={fechas.dtype}")
         meses = pd.PeriodIndex(fechas.unique(), freq="M")
         rango = pd.period_range(meses.min(), meses.max(), freq="M")
         meses_faltantes = rango.difference(meses)
@@ -136,8 +139,8 @@ def validar_actualizacion(
                 f"{nombre}: fecha maxima {fecha_max.date()} != {fecha_esperada.date()}"
             )
 
-        bancos_totales = set(str(x) for x in df["banco"].dropna().unique())
-        bancos_ultimo = set(str(x) for x in df.loc[fechas == fecha_max, "banco"].dropna().unique())
+        bancos_totales = set(unicodedata.normalize('NFC', str(x)) for x in df["banco"].dropna().unique())
+        bancos_ultimo = set(unicodedata.normalize('NFC', str(x)) for x in df.loc[fechas == fecha_max, "banco"].dropna().unique())
         if len(bancos_totales) != bancos_esperados:
             errores.append(
                 f"{nombre}: contiene {len(bancos_totales)} bancos; se esperaban {bancos_esperados}"
@@ -167,6 +170,9 @@ def validar_actualizacion(
 
         anterior = (estado_anterior or {}).get(nombre)
         if anterior:
+            # DIAGNOSTICO: mostrar nombres exactos para detectar diferencias de encoding
+            print(f"  [{nombre}] DIAGNOSTICO bancos anteriores ({len(anterior.get('bancos', []))}): {sorted(anterior.get('bancos', []))[:5]}...")
+            print(f"  [{nombre}] DIAGNOSTICO bancos nuevos ({len(bancos_totales)}): {sorted(bancos_totales)[:5]}...")
             if fecha_min > pd.Timestamp(anterior["fecha_min"]):
                 errores.append(
                     f"{nombre}: perdio historia; antes iniciaba {anterior['fecha_min']} "
@@ -177,8 +183,10 @@ def validar_actualizacion(
                 errores.append(
                     f"{nombre}: perdio meses publicados {sorted(meses_perdidos)[:12]}"
                 )
-            bancos_perdidos = set(anterior.get("bancos", [])) - bancos_totales
+            bancos_perdidos = set(unicodedata.normalize('NFC', b) for b in anterior.get("bancos", [])) - bancos_totales
             if bancos_perdidos:
+                print(f"  [{nombre}] BANCOS PERDIDOS repr: {[repr(b) for b in sorted(bancos_perdidos)[:5]]}")
+                print(f"  [{nombre}] BANCOS NUEVOS repr: {[repr(b) for b in sorted(bancos_totales)[:5]]}")
                 errores.append(f"{nombre}: perdio bancos {sorted(bancos_perdidos)}")
 
     metadata_path = MASTER_DATA_DIR / "metadata.json"
