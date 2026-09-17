@@ -19,6 +19,7 @@ from datetime import datetime
 import re
 import json
 import sys
+import unicodedata
 
 if sys.platform == 'win32' and hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -178,7 +179,7 @@ def main():
     bancos_error = []
 
     for i, carpeta in enumerate(sorted(carpetas), 1):
-        nombre_banco = extraer_nombre_banco(carpeta.name)
+        nombre_banco = unicodedata.normalize('NFC', extraer_nombre_banco(carpeta.name))
         print(f"[{i:2}/{len(carpetas)}] {nombre_banco}...", end=" ")
 
         # Buscar archivo Excel
