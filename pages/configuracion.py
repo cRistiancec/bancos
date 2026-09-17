@@ -17,7 +17,7 @@ with col1:
     **Sistema:** Sistema Financiero Privado
     **Versión:** 2.0.0 (Fase 1 — Refactor Institucional)
     **Autor:** Eco. Cristian Coronel Quezada, MBA
-    **Solución:** DATA METRICS — Business Intelligence and Analytics
+    **Solución:** DATAMETRICS — Business Intelligence and Analytics
     """)
 with col2:
     st.markdown("""
