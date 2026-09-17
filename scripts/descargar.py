@@ -192,7 +192,8 @@ def main():
         print(f"[3/5] Buscando carpeta de boletines individuales...")
         time.sleep(5)
 
-        # Estrategia 1: usar el mismo framework .entry que funciona para archivos        carpeta_texto = driver.execute_script(f"""
+        # Estrategia 1: usar el mismo framework .entry que funciona para archivos
+        carpeta_texto = driver.execute_script(f"""
             var texto_buscar = '{config.CARPETA_BOLETINES_TEXTO}';
             var entries = document.querySelectorAll('.entry');
             for (var i = 0; i < entries.length; i++) {{
@@ -267,7 +268,8 @@ def main():
             archivos_encontrados.append({'nombre': archivo['nombre'], 'url': download_url, 'id': archivo['id']})
 
         archivos_unicos = {}
-        for archivo in archivos_encontrados:            if archivo['nombre'] not in archivos_unicos:
+        for archivo in archivos_encontrados:
+            if archivo['nombre'] not in archivos_unicos:
                 archivos_unicos[archivo['nombre']] = archivo
         archivos_encontrados = list(archivos_unicos.values())
 
@@ -343,6 +345,7 @@ def main():
             print(f"\nDESCARGANDO {len(archivos_encontrados)} ARCHIVOS...")
             exitosos = 0
             fallidos = 0
+
             for idx, archivo in enumerate(archivos_encontrados, 1):
                 filepath_temporal = None
                 try:
@@ -409,6 +412,7 @@ def main():
                         banco_dir = os.path.join(extracted_dir, banco_name)
                         os.makedirs(banco_dir, exist_ok=True)
                         zip_ref.extractall(banco_dir)
+
                     files = os.listdir(banco_dir)
                     excel_files = [f for f in files
                                    if f.endswith(('.xlsx', '.xls')) and not f.startswith('~$')]
