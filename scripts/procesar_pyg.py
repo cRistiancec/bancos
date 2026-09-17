@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Procesa la hoja PYG (Pérdidas y Ganancias) de los archivos Excel.
+Procesa la hoja PYG (Perdidas y Ganancias) de los archivos Excel.
 
-Lógica especial:
-- Los datos son acumulados mes a mes dentro de cada año
+Logica especial:
+- Los datos son acumulados mes a mes dentro de cada anno
 - Se desacumulan para obtener el valor de cada mes individual
-- Se calcula suma móvil de 12 meses para comparabilidad
+- Se calcula suma movil de 12 meses para comparabilidad
 
 Estructura de la hoja PYG:
-- Códigos de cuenta: columna A, desde fila 6
+- Codigos de cuenta: columna A, desde fila 6
 - Nombres de cuenta: columna B
 - Datos: desde columna C
 - Fechas: fila 5, desde columna C
@@ -17,6 +17,7 @@ Estructura de la hoja PYG:
 import pandas as pd
 import numpy as np
 import re
+import unicodedata
 from pathlib import Path
 from datetime import datetime
 import sys
@@ -32,20 +33,20 @@ if sys.platform == 'win32' and hasattr(sys.stdout, 'reconfigure'):
 sys.path.insert(0, str(Path(__file__).parent))
 import config
 
-# Configuración
+# Configuracion
 CARPETA_DATOS = Path(config.get_carpeta_salida()) / "archivos_excel"
 CARPETA_SALIDA = Path("master_data")
 
 
 def extraer_nombre_banco(carpeta: str) -> str:
-    """Extrae nombre del banco de la carpeta, quitando el sufijo MES AÑO."""
+    """Extrae nombre del banco de la carpeta, quitando el sufijo MES ANNO."""
     nombre = re.sub(
         r'\s+(ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)\s+\d{4}$',
         '', carpeta, flags=re.IGNORECASE
     )
     return nombre.strip()
 
-# Códigos para cuentas resumen (filas con "--")
+# Codigos para cuentas resumen (filas con "--")
 CODIGOS_RESUMEN = {
     'MARGEN NETO DE INTERESES': 'MNI',
     'MARGEN BRUTO FINANCIERO': 'MBF',
@@ -62,13 +63,15 @@ def limpiar_nombre_cuenta(nombre: str) -> str:
     if pd.isna(nombre):
         return ''
     nombre = str(nombre).upper()
-    nombre = nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I')
-    nombre = nombre.replace('Ó', 'O').replace('Ú', 'U').replace('Ñ', 'N')
+    nombre = nombre.replace('A\u0301', 'A').replace('E\u0301', 'E').replace('I\u0301', 'I')
+    nombre = nombre.replace('O\u0301', 'O').replace('U\u0301', 'U').replace('N\u0303', 'N')
+    nombre = nombre.replace('\u00C1', 'A').replace('\u00C9', 'E').replace('\u00CD', 'I')
+    nombre = nombre.replace('\u00D3', 'O').replace('\u00DA', 'U').replace('\u00D1', 'N')
     return nombre
 
 
 def obtener_codigo_resumen(nombre: str) -> str:
-    """Obtiene el código para una cuenta resumen."""
+    """Obtiene el codigo para una cuenta resumen."""
     nombre_limpio = limpiar_nombre_cuenta(nombre)
     for clave, codigo in CODIGOS_RESUMEN.items():
         if clave in nombre_limpio:
@@ -80,16 +83,16 @@ def procesar_archivo_pyg(ruta_excel: Path) -> pd.DataFrame:
     """Procesa la hoja PYG de un archivo Excel."""
     try:
         # Extraer nombre del banco de la ruta
-        nombre_banco = extraer_nombre_banco(ruta_excel.parent.name)
+        nombre_banco = unicodedata.normalize('NFC', extraer_nombre_banco(ruta_excel.parent.name))
 
         # Leer hoja PYG sin encabezado
         df_raw = pd.read_excel(ruta_excel, sheet_name='PYG', header=None)
 
         if df_raw.shape[0] < 10 or df_raw.shape[1] < 5:
-            print(f"  [WARN] Archivo muy pequeño: {ruta_excel.name}")
+            print(f"  [WARN] Archivo muy pequeno: {ruta_excel.name}")
             return pd.DataFrame()
 
-        # Extraer fechas de la fila 5 (índice 4), desde columna C (índice 2)
+        # Extraer fechas de la fila 5 (indice 4), desde columna C (indice 2)
         fechas_raw = df_raw.iloc[4, 2:].values
         fechas = []
         for f in fechas_raw:
@@ -107,17 +110,17 @@ def procesar_archivo_pyg(ruta_excel: Path) -> pd.DataFrame:
                 break
 
         if len(fechas) == 0:
-            print(f"  [WARN] Sin fechas válidas: {ruta_excel.name}")
+            print(f"  [WARN] Sin fechas validas: {ruta_excel.name}")
             return pd.DataFrame()
 
-        # Procesar filas de datos (desde fila 6, índice 5)
+        # Procesar filas de datos (desde fila 6, indice 5)
         registros = []
 
         for idx in range(5, min(140, len(df_raw))):
             codigo_raw = df_raw.iloc[idx, 0]
             nombre = df_raw.iloc[idx, 1]
 
-            # Determinar código
+            # Determinar codigo
             if pd.isna(codigo_raw):
                 continue
 
@@ -170,8 +173,8 @@ def desacumular_valores(df: pd.DataFrame) -> pd.DataFrame:
     """
     Desacumula los valores para obtener el valor de cada mes individual.
 
-    Lógica:
-    - Enero: valor_mes = valor_acumulado (primer mes del año)
+    Logica:
+    - Enero: valor_mes = valor_acumulado (primer mes del anno)
     - Feb-Dic: valor_mes = valor_acumulado - valor_acumulado_mes_anterior
     """
     if df.empty:
@@ -181,7 +184,7 @@ def desacumular_valores(df: pd.DataFrame) -> pd.DataFrame:
     df['ano'] = df['fecha'].dt.year
     df['mes'] = df['fecha'].dt.month
 
-    # Calcular valor del mes anterior (dentro del mismo banco, código y año)
+    # Calcular valor del mes anterior (dentro del mismo banco, codigo y anno)
     df['valor_anterior'] = df.groupby(
         ['banco', 'codigo', 'ano'], observed=True
     )['valor_acumulado'].shift(1)
@@ -199,7 +202,7 @@ def desacumular_valores(df: pd.DataFrame) -> pd.DataFrame:
 
 def calcular_suma_movil_12m(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Calcula la suma móvil de 12 meses para cada banco/código.
+    Calcula la suma movil de 12 meses para cada banco/codigo.
     Esto permite comparar cualquier mes con cualquier otro.
     """
     if df.empty:
@@ -207,7 +210,7 @@ def calcular_suma_movil_12m(df: pd.DataFrame) -> pd.DataFrame:
 
     df = df.sort_values(['banco', 'codigo', 'fecha']).copy()
 
-    # Calcular suma móvil de 12 meses
+    # Calcular suma movil de 12 meses
     df['valor_12m'] = df.groupby(
         ['banco', 'codigo'], observed=True
     )['valor_mes'].transform(
@@ -219,7 +222,7 @@ def calcular_suma_movil_12m(df: pd.DataFrame) -> pd.DataFrame:
 
 def main():
     print("=" * 60)
-    print("PROCESAMIENTO DE HOJA PYG (PÉRDIDAS Y GANANCIAS)")
+    print("PROCESAMIENTO DE HOJA PYG (PERDIDAS Y GANANCIAS)")
     print("=" * 60)
 
     # Crear carpeta de salida
@@ -262,10 +265,10 @@ def main():
     # Desacumular valores
     print("\nDesacumulando valores mensuales...")
     df_desacumulado = desacumular_valores(df_combinado)
-    print(f"Registros después de desacumular: {len(df_desacumulado):,}")
+    print(f"Registros despues de desacumular: {len(df_desacumulado):,}")
 
-    # Calcular suma móvil de 12 meses
-    print("\nCalculando suma móvil de 12 meses...")
+    # Calcular suma movil de 12 meses
+    print("\nCalculando suma movil de 12 meses...")
     df_final = calcular_suma_movil_12m(df_desacumulado)
 
     # Seleccionar columnas finales
@@ -275,19 +278,19 @@ def main():
     for columna in ['banco', 'codigo', 'cuenta']:
         df_final[columna] = df_final[columna].astype('category')
 
-    # Estadísticas
+    # Estadisticas
     print("\n" + "=" * 40)
     print("RESUMEN")
     print("=" * 40)
     print(f"Bancos: {df_final['banco'].nunique()}")
     print(f"Fechas: {df_final['fecha'].nunique()}")
-    print(f"Cuentas únicas: {df_final['codigo'].nunique()}")
+    print(f"Cuentas unicas: {df_final['codigo'].nunique()}")
     print(f"Registros totales: {len(df_final):,}")
 
     # Fechas disponibles
     print(f"\nRango de fechas: {df_final['fecha'].min()} a {df_final['fecha'].max()}")
 
-    # Verificar suma móvil
+    # Verificar suma movil
     registros_con_12m = df_final['valor_12m'].notna().sum()
     print(f"Registros con valor_12m: {registros_con_12m:,} ({registros_con_12m/len(df_final)*100:.1f}%)")
 
@@ -297,7 +300,7 @@ def main():
     df_final.to_parquet(ruta_temporal, index=False)
     ruta_temporal.replace(ruta_salida)
     print(f"\n[OK] Guardado: {ruta_salida}")
-    print(f"    Tamaño: {ruta_salida.stat().st_size / 1024 / 1024:.1f} MB")
+    print(f"    Tamano: {ruta_salida.stat().st_size / 1024 / 1024:.1f} MB")
 
     # Mostrar muestra de cuentas principales
     print("\n" + "-" * 40)
