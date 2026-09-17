@@ -107,7 +107,8 @@ def main():
                 '/usr/bin/chromium-browser',
                 '/usr/bin/chromium',
             ]:
-                if os.path.isfile(candidate):                    chrome_options.binary_location = candidate
+                if os.path.isfile(candidate):
+                    chrome_options.binary_location = candidate
                     print(f"Chrome detectado en: {candidate}")
                     break
 
