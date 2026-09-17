@@ -107,8 +107,7 @@ def main():
                 '/usr/bin/chromium-browser',
                 '/usr/bin/chromium',
             ]:
-                if os.path.isfile(candidate):
-                    chrome_options.binary_location = candidate
+                if os.path.isfile(candidate):                    chrome_options.binary_location = candidate
                     print(f"Chrome detectado en: {candidate}")
                     break
 
@@ -132,7 +131,7 @@ def main():
         driver.execute_script("window.scrollTo(0, 800);")
         time.sleep(config.TIEMPO_ENTRE_SCROLL)
 
-        print(f"[2/5] Buscando 'Anio {config.ANO_BUSCAR}'...")
+        print(f"[2/5] Buscando 'Año {config.ANO_BUSCAR}'...")
         xpath_ano = config.get_ano_xpath()
         ano_elements = []
         for intento in range(6):
@@ -161,7 +160,7 @@ def main():
                 time.sleep(5)
 
         if not ano_elements:
-            all_entries = driver.find_elements(By.XPATH, "//*[contains(text(), 'Anio')]")
+            all_entries = driver.find_elements(By.XPATH, "//*[contains(text(), 'Año')]")
             if all_entries:
                 print(f"  Carpetas encontradas:")
                 for e in all_entries:
@@ -169,7 +168,7 @@ def main():
             else:
                 page_text = driver.find_element(By.TAG_NAME, "body").text[:500]
                 print(f"  Contenido visible: {page_text[:200]}")
-            raise Exception(f"Carpeta 'Anio {config.ANO_BUSCAR}' no encontrada")
+            raise Exception(f"Carpeta 'Año {config.ANO_BUSCAR}' no encontrada")
 
         for elem in ano_elements:
             try:
@@ -183,39 +182,54 @@ def main():
                 driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", clickeable)
                 time.sleep(1)
                 driver.execute_script("arguments[0].click();", clickeable)
-                print(f"  Clic exitoso en 'Anio {config.ANO_BUSCAR}'")
+                print(f"  Clic exitoso en 'Año {config.ANO_BUSCAR}'")
                 time.sleep(config.TIEMPO_DESPUES_CLIC)
                 break
             except:
                 continue
 
-        print(f"[3/5] Buscando carpeta de boletines...")
+        print(f"[3/5] Buscando carpeta de boletines individuales...")
         time.sleep(5)
-        boletines_elements = driver.find_elements(By.XPATH,
-            f"//*[contains(text(), '{config.CARPETA_BOLETINES_TEXTO}')]")
 
-        if not boletines_elements:
-            raise Exception("Carpeta de boletines no encontrada")
+        # Estrategia 1: usar el mismo framework .entry que funciona para archivos        carpeta_texto = driver.execute_script(f"""
+            var texto_buscar = '{config.CARPETA_BOLETINES_TEXTO}';
+            var entries = document.querySelectorAll('.entry');
+            for (var i = 0; i < entries.length; i++) {{
+                var links = entries[i].querySelectorAll('.entry_link');
+                for (var j = 0; j < links.length; j++) {{
+                    if (links[j].textContent.trim().indexOf(texto_buscar) !== -1) {{
+                        links[j].click();
+                        return links[j].textContent.trim();
+                    }}
+                }}
+            }}
+            return null;
+        """)
 
-        for elem in boletines_elements:
-            try:
-                elem_text = elem.text
-                if 'entid' in elem_text.lower() or 'bancos' in elem_text.lower():
-                    clickeable = elem
-                    for _ in range(5):
-                        parent = clickeable.find_element(By.XPATH, "./..")
-                        class_attr = parent.get_attribute('class') or ''
-                        if 'entry' in class_attr or 'folder' in class_attr:
-                            clickeable = parent
-                            break
-                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", clickeable)
-                    time.sleep(1)
-                    driver.execute_script("arguments[0].click();", clickeable)
-                    print(f"  Clic exitoso en '{elem_text[:50]}'")
-                    time.sleep(config.TIEMPO_CARGA_ARCHIVOS)
-                    break
-            except:
-                continue
+        if carpeta_texto:
+            print(f"  Subcarpeta encontrada (JS .entry): {carpeta_texto[:70]}")
+            time.sleep(config.TIEMPO_CARGA_ARCHIVOS)
+        else:
+            # Estrategia 2: XPATH fallback
+            print(f"  JS .entry no encontro subcarpeta, intentando XPATH...")
+            boletines_elements = driver.find_elements(By.XPATH,
+                f"//*[contains(text(), '{config.CARPETA_BOLETINES_TEXTO}')]")
+            clic_ok = False
+            for elem in boletines_elements:
+                try:
+                    elem_text = elem.text
+                    if 'entid' in elem_text.lower() or 'bancos' in elem_text.lower():
+                        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", elem)
+                        time.sleep(1)
+                        driver.execute_script("arguments[0].click();", elem)
+                        print(f"  Clic exitoso (XPATH): {elem_text[:50]}")
+                        time.sleep(config.TIEMPO_CARGA_ARCHIVOS)
+                        clic_ok = True
+                        break
+                except:
+                    continue
+            if not clic_ok:
+                print(f"  ADVERTENCIA: subcarpeta no encontrada. Buscando archivos en nivel actual.")
 
         print(f"[4/5] Cargando archivos...")
         for i in range(5):
@@ -252,8 +266,7 @@ def main():
             archivos_encontrados.append({'nombre': archivo['nombre'], 'url': download_url, 'id': archivo['id']})
 
         archivos_unicos = {}
-        for archivo in archivos_encontrados:
-            if archivo['nombre'] not in archivos_unicos:
+        for archivo in archivos_encontrados:            if archivo['nombre'] not in archivos_unicos:
                 archivos_unicos[archivo['nombre']] = archivo
         archivos_encontrados = list(archivos_unicos.values())
 
@@ -325,11 +338,10 @@ def main():
                     print(f"  [OK] {banco_carpeta}")
 
         else:
-            # Formato antiguo: un ZIP por banco
+            # Formato de ZIPs individuales por banco
             print(f"\nDESCARGANDO {len(archivos_encontrados)} ARCHIVOS...")
             exitosos = 0
             fallidos = 0
-
             for idx, archivo in enumerate(archivos_encontrados, 1):
                 filepath_temporal = None
                 try:
@@ -369,14 +381,36 @@ def main():
                 try:
                     zip_path = os.path.join(download_dir, zip_filename)
                     validar_zip(Path(zip_path))
-                    banco_name = re.sub(r'^Series\s*Banco\s*', '', zip_filename.replace('.zip', ''), flags=re.IGNORECASE)
-                    print(f"[{idx:3}/{len(archivos_zip)}] {banco_name[:45]:45} ... ", end='', flush=True)
-                    banco_dir = os.path.join(extracted_dir, banco_name)
-                    os.makedirs(banco_dir, exist_ok=True)
+
+                    # Derivar banco_name del Excel DENTRO del ZIP (robusto ante fechas en nombre del ZIP)
                     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        xlsx_en_zip = [n for n in zip_ref.namelist()
+                                       if n.lower().endswith(('.xlsx', '.xls'))
+                                       and not Path(n).name.startswith('~$')]
+                        if xlsx_en_zip:
+                            excel_base = Path(xlsx_en_zip[0]).name
+                            banco_name = re.sub(
+                                r'^Series\s*Banco\s*', '',
+                                excel_base.rsplit('.', 1)[0],
+                                flags=re.IGNORECASE
+                            ).strip()
+                        else:
+                            # Fallback: derivar del ZIP eliminando la fecha al final
+                            banco_name = re.sub(r'^Series\s*Banco\s*', '',
+                                                zip_filename.replace('.zip', ''),
+                                                flags=re.IGNORECASE)
+                            banco_name = re.sub(
+                                r'\s+(ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|'
+                                r'SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)\s+\d{4}\s*$',
+                                '', banco_name, flags=re.IGNORECASE).strip()
+
+                        print(f"[{idx:3}/{len(archivos_zip)}] {banco_name[:45]:45} ... ", end='', flush=True)
+                        banco_dir = os.path.join(extracted_dir, banco_name)
+                        os.makedirs(banco_dir, exist_ok=True)
                         zip_ref.extractall(banco_dir)
                     files = os.listdir(banco_dir)
-                    excel_files = [f for f in files if f.endswith(('.xlsx', '.xls'))]
+                    excel_files = [f for f in files
+                                   if f.endswith(('.xlsx', '.xls')) and not f.startswith('~$')]
                     for excel_file in excel_files:
                         old_path = os.path.join(banco_dir, excel_file)
                         new_path = os.path.join(banco_dir, f"{banco_name}.xlsx")
