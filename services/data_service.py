@@ -415,6 +415,13 @@ def obtener_contexto_sistema() -> Dict[str, Any]:
 
     metadata = cargar_metadata()
     if metadata and 'error' not in metadata:
-        contexto['fecha_actualizacion'] = metadata.get('fecha_actualizacion')
+        _raw_fecha = metadata.get('ultima_actualizacion')
+        if _raw_fecha:
+            try:
+                from datetime import datetime as _dt
+                _dt_obj = _dt.fromisoformat(str(_raw_fecha))
+                contexto['fecha_actualizacion'] = _dt_obj.strftime('%d/%m/%Y')
+            except Exception:
+                contexto['fecha_actualizacion'] = str(_raw_fecha)
 
     return contexto
