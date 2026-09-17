@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script maestro para actualización automática de datos.
+Script maestro para actualizacion automatica de datos.
 
 Este script orquesta todo el proceso:
 1. Verifica si hay nuevos datos disponibles
 2. Descarga los datos del mes anterior
 3. Procesa Balance, PyG y CAMEL
 4. Actualiza los archivos parquet
-5. Genera reporte de actualización
+5. Genera reporte de actualizacion
 
 USO:
     python scripts/actualizar_datos.py
 
-En GitHub Actions se ejecuta automáticamente el día 10 de cada mes.
+En GitHub Actions se ejecuta automaticamente el dia 10 de cada mes.
 """
 
 import os
@@ -25,17 +25,17 @@ import tempfile
 from pathlib import Path
 from datetime import datetime, timedelta
 
-# Agregar directorio raíz al path
+# Agregar directorio raiz al path
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 sys.path.insert(0, str(ROOT_DIR / "scripts"))
 
-# Importar configuración
+# Importar configuracion
 import config
 from validar_actualizacion import capturar_estado, validar_actualizacion
 
 # =============================================================================
-# CONFIGURACIÓN
+# CONFIGURACION
 # =============================================================================
 
 MASTER_DATA_DIR = ROOT_DIR / "master_data"
@@ -55,7 +55,7 @@ def log(mensaje: str, nivel: str = "INFO"):
 
 
 def cargar_estado() -> dict:
-    """Carga el estado de la última actualización."""
+    """Carga el estado de la ultima actualizacion."""
     if STATUS_FILE.exists():
         with open(STATUS_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -63,7 +63,7 @@ def cargar_estado() -> dict:
 
 
 def guardar_estado(estado: dict):
-    """Guarda el estado de actualización."""
+    """Guarda el estado de actualizacion."""
     MASTER_DATA_DIR.mkdir(exist_ok=True)
     with open(STATUS_FILE, 'w', encoding='utf-8') as f:
         json.dump(estado, f, indent=2, ensure_ascii=False)
@@ -73,10 +73,10 @@ def verificar_datos_ya_actualizados() -> bool:
     """
     Verifica si los datos del mes objetivo ya fueron descargados.
     Compara contra la fecha_max real del parquet, no contra update_status.json,
-    para evitar falsos positivos cuando el portal no publicó el mes aún.
+    para evitar falsos positivos cuando el portal no publico el mes aun.
 
     Returns:
-        bool: True si ya están actualizados, False si necesita actualizar.
+        bool: True si ya estan actualizados, False si necesita actualizar.
     """
     periodo_actual = config.PERIODO_DESCARGA
 
@@ -93,7 +93,7 @@ def verificar_datos_ya_actualizados() -> bool:
             log(f"  Datos actuales en parquet hasta: {periodo_real}")
             log(f"  Periodo objetivo: {periodo_actual}")
             if periodo_real == periodo_actual:
-                log(f"Los datos de {periodo_actual} ya están en el parquet")
+                log(f"Los datos de {periodo_actual} ya estan en el parquet")
                 return True
         except Exception as e:
             log(f"  No se pudo leer parquet para verificar: {e}", "WARNING")
@@ -133,18 +133,20 @@ def ejecutar_script(script_name: str) -> int:
             cwd=str(ROOT_DIR),
             capture_output=True,
             text=True,
-            timeout=600  # 10 minutos máximo
+            timeout=600  # 10 minutos maximo
         )
+
+        # Siempre mostrar salida para facilitar diagnostico en CI
+        if result.stdout:
+            log(f"  [STDOUT] {script_name}:\n{result.stdout[-3000:]}")
+        if result.stderr:
+            log(f"  [STDERR] {script_name}:\n{result.stderr[-1000:]}", "WARNING")
 
         if result.returncode == 0:
             log(f"[OK] {script_name} completado exitosamente")
             return 0
         else:
             log(f"[FAIL] {script_name} fallo con codigo {result.returncode}", "ERROR")
-            if result.stdout:
-                log(f"  Salida: {result.stdout[-1000:]}", "ERROR")
-            if result.stderr:
-                log(f"  Error: {result.stderr[-1000:]}", "ERROR")
             return result.returncode
 
     except subprocess.TimeoutExpired:
@@ -179,7 +181,7 @@ def procesar_balance() -> bool:
 
 
 def procesar_pyg() -> bool:
-    """Procesa los datos de Pérdidas y Ganancias."""
+    """Procesa los datos de Perdidas y Ganancias."""
     log("=" * 60)
     log("PASO 3: PROCESAMIENTO DE P&G")
     log("=" * 60)
@@ -204,7 +206,7 @@ def verificar_archivos_generados() -> bool:
         bool: True si todos los archivos existen y tienen datos
     """
     log("=" * 60)
-    log("PASO 5: VERIFICACIÓN DE ARCHIVOS")
+    log("PASO 5: VERIFICACION DE ARCHIVOS")
     log("=" * 60)
 
     archivos_requeridos = [
@@ -266,14 +268,14 @@ def restaurar_master(directorio_respaldo: Path, respaldados: list[str]):
 
 def generar_reporte(exitoso: bool, pasos_completados: list):
     """
-    Genera un reporte de la actualización.
+    Genera un reporte de la actualizacion.
 
     Args:
-        exitoso: Si la actualización fue exitosa
+        exitoso: Si la actualizacion fue exitosa
         pasos_completados: Lista de pasos completados
     """
     log("=" * 60)
-    log("REPORTE DE ACTUALIZACIÓN")
+    log("REPORTE DE ACTUALIZACION")
     log("=" * 60)
 
     estado = {
@@ -284,7 +286,7 @@ def generar_reporte(exitoso: bool, pasos_completados: list):
     }
 
     if exitoso:
-        # Verificar la fecha máxima real del parquet generado
+        # Verificar la fecha maxima real del parquet generado
         periodo_real = config.PERIODO_DESCARGA
         try:
             import pandas as pd
@@ -293,7 +295,7 @@ def generar_reporte(exitoso: bool, pasos_completados: list):
             meses = {1:'ENERO',2:'FEBRERO',3:'MARZO',4:'ABRIL',5:'MAYO',6:'JUNIO',
                      7:'JULIO',8:'AGOSTO',9:'SEPTIEMBRE',10:'OCTUBRE',11:'NOVIEMBRE',12:'DICIEMBRE'}
             periodo_real = f"{meses[fecha_max.month]} {fecha_max.year}"
-            log(f"  Fecha máxima real en parquet: {fecha_max.strftime('%Y-%m-%d')} → {periodo_real}")
+            log(f"  Fecha maxima real en parquet: {fecha_max.strftime('%Y-%m-%d')} -> {periodo_real}")
         except Exception as e:
             log(f"  No se pudo leer fecha_max del parquet: {e}", "WARNING")
 
@@ -380,7 +382,7 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except KeyboardInterrupt:
-        log("Actualización cancelada por el usuario", "WARNING")
+        log("Actualizacion cancelada por el usuario", "WARNING")
         sys.exit(1)
     except Exception as e:
         log(f"Error inesperado: {e}", "ERROR")
