@@ -1,5 +1,5 @@
 {
-  "ultima_actualizacion": "2026-07-18T12:27:00.044622",
+  "ultima_actualizacion": "2026-09-17T17:38:04.526393",
   "bancos_procesados": [
     "Amazonas",
     "Atlantida",
@@ -12,7 +12,7 @@
     "Coopnacional",
     "DelBank",
     "Diners",
-    "General Rumiñahui",
+    "General Rumiñahui",
     "Guayaquil",
     "Internacional",
     "Litoral",
@@ -27,9 +27,9 @@
   ],
   "bancos_error": [],
   "total_bancos": 23,
-  "total_registros": 8152043,
+  "total_registros": 8215569,
   "fecha_min": "2003-01-31 00:00:00",
-  "fecha_max": "2026-06-30 00:00:00",
+  "fecha_max": "2026-08-31 00:00:00",
   "hojas_procesadas": [
     "BAL"
   ]
