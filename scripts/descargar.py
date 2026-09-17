@@ -132,7 +132,7 @@ def main():
         driver.execute_script("window.scrollTo(0, 800);")
         time.sleep(config.TIEMPO_ENTRE_SCROLL)
 
-        print(f"[2/5] Buscando 'Año {config.ANO_BUSCAR}'...")
+        print(f"[2/5] Buscando 'Ano {config.ANO_BUSCAR}'...")
         xpath_ano = config.get_ano_xpath()
         ano_elements = []
         for intento in range(6):
@@ -161,7 +161,7 @@ def main():
                 time.sleep(5)
 
         if not ano_elements:
-            all_entries = driver.find_elements(By.XPATH, "//*[contains(text(), 'Año')]")
+            all_entries = driver.find_elements(By.XPATH, "//*[contains(text(), 'Ano')]")
             if all_entries:
                 print(f"  Carpetas encontradas:")
                 for e in all_entries:
@@ -169,7 +169,7 @@ def main():
             else:
                 page_text = driver.find_element(By.TAG_NAME, "body").text[:500]
                 print(f"  Contenido visible: {page_text[:200]}")
-            raise Exception(f"Carpeta 'Año {config.ANO_BUSCAR}' no encontrada")
+            raise Exception(f"Carpeta 'Ano {config.ANO_BUSCAR}' no encontrada")
 
         for elem in ano_elements:
             try:
@@ -183,7 +183,7 @@ def main():
                 driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", clickeable)
                 time.sleep(1)
                 driver.execute_script("arguments[0].click();", clickeable)
-                print(f"  Clic exitoso en 'Año {config.ANO_BUSCAR}'")
+                print(f"  Clic exitoso en 'Ano {config.ANO_BUSCAR}'")
                 time.sleep(config.TIEMPO_DESPUES_CLIC)
                 break
             except:
@@ -192,19 +192,18 @@ def main():
         print(f"[3/5] Buscando carpeta de boletines individuales...")
         time.sleep(5)
 
-        # Estrategia 1: usar el mismo framework .entry que funciona para archivos
         carpeta_texto = driver.execute_script(f"""
             var texto_buscar = '{config.CARPETA_BOLETINES_TEXTO}';
             var entries = document.querySelectorAll('.entry');
-            for (var i = 0; i < entries.length; i++) {{
+            for (var i = 0; i < entries.length; i++) {{{{
                 var links = entries[i].querySelectorAll('.entry_link');
-                for (var j = 0; j < links.length; j++) {{
-                    if (links[j].textContent.trim().indexOf(texto_buscar) !== -1) {{
+                for (var j = 0; j < links.length; j++) {{{{
+                    if (links[j].textContent.trim().indexOf(texto_buscar) !== -1) {{{{
                         links[j].click();
                         return links[j].textContent.trim();
-                    }}
-                }}
-            }}
+                    }}}}
+                }}}}
+            }}}}
             return null;
         """)
 
@@ -212,7 +211,6 @@ def main():
             print(f"  Subcarpeta encontrada (JS .entry): {carpeta_texto[:70]}")
             time.sleep(config.TIEMPO_CARGA_ARCHIVOS)
         else:
-            # Estrategia 2: XPATH fallback
             print(f"  JS .entry no encontro subcarpeta, intentando XPATH...")
             boletines_elements = driver.find_elements(By.XPATH,
                 f"//*[contains(text(), '{config.CARPETA_BOLETINES_TEXTO}')]")
@@ -281,7 +279,6 @@ def main():
         for idx, f in enumerate(archivos_encontrados, 1):
             print(f"{idx:3}. {f['nombre'][:70]}")
 
-        # Detectar si el portal cambio a formato consolidado (un ZIP con todos los bancos)
         es_consolidado = (
             len(archivos_encontrados) == 1
             and any('total' in a['nombre'].lower() for a in archivos_encontrados)
@@ -303,7 +300,6 @@ def main():
         os.makedirs(extracted_dir, exist_ok=True)
 
         if es_consolidado:
-            # Formato nuevo: un solo ZIP con todos los bancos
             archivo = archivos_encontrados[0]
             print(f"\nDESCARGANDO ZIP CONSOLIDADO: {archivo['nombre'][:60]}")
             response = session.get(archivo['url'], stream=True, timeout=config.TIMEOUT_DESCARGA * 3)
@@ -341,7 +337,6 @@ def main():
                     print(f"  [OK] {banco_carpeta}")
 
         else:
-            # Formato de ZIPs individuales por banco
             print(f"\nDESCARGANDO {len(archivos_encontrados)} ARCHIVOS...")
             exitosos = 0
             fallidos = 0
@@ -386,27 +381,18 @@ def main():
                     zip_path = os.path.join(download_dir, zip_filename)
                     validar_zip(Path(zip_path))
 
-                    # Derivar banco_name del Excel DENTRO del ZIP (robusto ante fechas en nombre del ZIP)
+                    # Siempre derivar banco_name del ZIP: el portal SBS mantiene
+                    # 'Series Banco X MES ANO.zip'; el Excel interno cambio de
+                    # 'Series Banco X.xlsx' a 'BP X YYYY_MM.xlsx' en ago-2026.
+                    banco_name = re.sub(r'^Series\s*Banco\s*', '',
+                                        zip_filename.replace('.zip', ''),
+                                        flags=re.IGNORECASE)
+                    banco_name = re.sub(
+                        r'\s+(ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|'
+                        r'SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)\s+\d{4}\s*$',
+                        '', banco_name, flags=re.IGNORECASE).strip()
+
                     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                        xlsx_en_zip = [n for n in zip_ref.namelist()
-                                       if n.lower().endswith(('.xlsx', '.xls'))
-                                       and not Path(n).name.startswith('~$')]
-                        if xlsx_en_zip:
-                            excel_base = Path(xlsx_en_zip[0]).name
-                            banco_name = re.sub(
-                                r'^Series\s*Banco\s*', '',
-                                excel_base.rsplit('.', 1)[0],
-                                flags=re.IGNORECASE
-                            ).strip()
-                        else:
-                            # Fallback: derivar del ZIP eliminando la fecha al final
-                            banco_name = re.sub(r'^Series\s*Banco\s*', '',
-                                                zip_filename.replace('.zip', ''),
-                                                flags=re.IGNORECASE)
-                            banco_name = re.sub(
-                                r'\s+(ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|'
-                                r'SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)\s+\d{4}\s*$',
-                                '', banco_name, flags=re.IGNORECASE).strip()
 
                         print(f"[{idx:3}/{len(archivos_zip)}] {banco_name[:45]:45} ... ", end='', flush=True)
                         banco_dir = os.path.join(extracted_dir, banco_name)
