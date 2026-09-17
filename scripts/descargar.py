@@ -392,6 +392,15 @@ def main():
                         r'SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)\s+\d{4}\s*$',
                         '', banco_name, flags=re.IGNORECASE).strip()
 
+                    # Correcciones para compatibilidad con master_data historico
+                    # El portal SBS usa nombres diferentes en ZIP vs Excel historico
+                    _name_fix = {
+                        'Atlántida': 'Atlantida',
+                        'Pacífico': 'Pacifico',
+                        'VisionFund Ecuador': 'VisionFund',
+                    }
+                    banco_name = _name_fix.get(banco_name, banco_name)
+
                     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
 
                         print(f"[{idx:3}/{len(archivos_zip)}] {banco_name[:45]:45} ... ", end='', flush=True)
